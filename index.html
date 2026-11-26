@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="assets/favicon.png">
+  <title>MathBoy – Livello 1 (web)</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+    #game { width: 100vw; height: 100vh; }
+    canvas { cursor: none; display: block; }
+    #old-browser { color: #fff; font: 16px sans-serif; padding: 2em; }
+  </style>
+</head>
+<body>
+  <div id="game"></div>
+  <!-- Phaser copiato nel repo: niente CDN, che le reti scolastiche spesso bloccano -->
+  <script src="lib/phaser.min.js"></script>
+  <script type="module" src="src/main.js"></script>
+  <script nomodule>
+    document.getElementById("game").innerHTML =
+      '<p id="old-browser">Browser troppo vecchio: serve Chrome, Edge o Firefox aggiornato.</p>';
+  </script>
+</body>
+</html>
