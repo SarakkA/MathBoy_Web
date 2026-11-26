@@ -87,5 +87,6 @@ I nomi dei file sono case-sensitive su GitHub Pages: un import scritto con maius
 
 ## Pubblicazione
 
-GitHub Pages pubblica il branch `main` così com'è (Settings → Pages → Deploy from a branch).
-Ogni push su `main` va online in circa un minuto.
+Il workflow `.github/workflows/pages.yml` pubblica il repo su GitHub Pages a ogni push su `main`
+(Settings → Pages → Source: "GitHub Actions"). In circa un minuto la versione nuova è online.
+Ogni deploy si vede nella tab Actions; in Deployments (colonna di destra del repo) c'è il commit attualmente online.
