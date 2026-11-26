@@ -1,5 +1,5 @@
-import { BLU, ROSSO, BULLET_SPEED, BULLET_RADIUS, Op } from "../settings.js";
-import { shadedBall } from "../utils.js";
+import { BLU, ROSSO, BULLET_SPEED, BULLET_RADIUS, Op } from "../config/settings.js";
+import { shadedBall } from "../core/utils.js";
 
 /** Pallina col numero sopra che va dritta verso il punto mirato (bullet.py). */
 export default class Bullet {

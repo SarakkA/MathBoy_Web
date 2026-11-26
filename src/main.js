@@ -1,9 +1,11 @@
-import { LOGICAL_WIDTH, LOGICAL_HEIGHT } from "./settings.js";
-import Level1Scene from "./scenes/Level1Scene.js";
+import { LOGICAL_WIDTH, LOGICAL_HEIGHT } from "./config/settings.js";
+import BootScene from "./scenes/BootScene.js";
+import LevelScene from "./scenes/LevelScene.js";
+import StatsScene from "./scenes/StatsScene.js";
 
 // Superficie logica 640x360 come il desktop, scalata per riempire la finestra.
 // AUTO = WebGL, con ripiego automatico su Canvas 2D se WebGL e' disattivato.
-// esposto su window per il debug dalla console del browser
+// Esposto su window per il debug dalla console del browser.
 window.game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: "game",
@@ -20,5 +22,5 @@ window.game = new Phaser.Game({
   input: {
     mouse: { preventDefaultWheel: true },
   },
-  scene: [Level1Scene],
+  scene: [BootScene, LevelScene, StatsScene],
 });

@@ -1,5 +1,5 @@
-import { PLAYER_SPEED, HP_MAX, LIVES } from "../settings.js";
-import { overlaps } from "../utils.js";
+import { PLAYER_SPEED } from "../config/settings.js";
+import { overlaps } from "../core/utils.js";
 
 // Righe dello sprite sheet 48x48 (player.py load_animation_sprite): [riga, specchiata]
 const ANIMS = {
@@ -26,6 +26,7 @@ const HITBOX_W = 12;         // 48x48 ridotto di 36x32
 const HITBOX_H = 16;
 const SPRITE_ABOVE_HITBOX = 9; // reset_hitbox_to_rect_y: rect.centery = hitbox.centery - 9
 
+/** Movimento, collisioni e animazione. HP, vite, monete e armi stanno nella run (core/run.js). */
 export default class Player {
   constructor(scene, x, y) {
     this.scene = scene;
@@ -33,15 +34,8 @@ export default class Player {
     this.sprite = scene.add.sprite(x, y - SPRITE_ABOVE_HITBOX, "player", 0);
 
     this.speed = PLAYER_SPEED;
-    this.hpMax = HP_MAX;
-    this.hp = HP_MAX;
-    this.lives = LIVES;
-    this.score = 0;
-    this.values = [1];
-    this.valueIndex = 0;
-    this.bulletsFired = 0;
-
     this.isDead = false;
+    this.locked = false; // fermo durante baule e dialoghi (can_move/can_shoot = False)
     this.state = "idle_up";
     this.frameIndex = 0;
     this.frameTimer = 0;
@@ -49,17 +43,8 @@ export default class Player {
     this.sync();
   }
 
-  get selectedValue() {
-    return this.values[this.valueIndex];
-  }
-
   get center() {
     return { x: this.hitbox.centerX, y: this.hitbox.centerY };
-  }
-
-  changeValue(direction) {
-    // come change_value: indice limitato, non ciclico
-    this.valueIndex = Phaser.Math.Clamp(this.valueIndex - direction, 0, this.values.length - 1);
   }
 
   /** dir: {x,y} da WASD (non normalizzato); aim: vettore player -> mouse in coordinate mondo */
@@ -67,6 +52,10 @@ export default class Player {
     if (this.isDead) {
       this.state = "death";
       this.animate(dt, 1, DEATH_FRAME_TIME);
+      return;
+    }
+    if (this.locked) {
+      this.animate(dt, 1, FRAME_TIME);
       return;
     }
 
@@ -123,6 +112,15 @@ export default class Player {
     this.sprite.setFlipX(flip);
   }
 
+  /** blocca il player e lo gira verso il punto (level_Z.py force_player_to_read) */
+  lockFacing(x, y) {
+    this.locked = true;
+    const dx = x - this.hitbox.centerX;
+    const dy = y - this.hitbox.centerY;
+    if (Math.abs(dx) > Math.abs(dy)) this.state = dx > 0 ? "idle_right" : "idle_left";
+    else this.state = dy > 0 ? "idle_down" : "idle_up";
+  }
+
   startDeath() {
     this.isDead = true;
     this.frameIndex = 0;
@@ -131,7 +129,6 @@ export default class Player {
 
   revive() {
     this.isDead = false;
-    this.hp = this.hpMax;
     this.state = "idle_down";
   }
 

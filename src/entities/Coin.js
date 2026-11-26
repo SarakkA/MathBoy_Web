@@ -1,3 +1,4 @@
+import { DEPTH } from "../config/settings.js";
 // Moneta lasciata dal nemico risolto (coin.py): rimbalza, poi si raccoglie toccandola.
 const FRAMES = 7;            // coin2.png: 3 + 3 + 1 frame da 16x16
 const FRAME_TIME = 7 / 60;
@@ -18,7 +19,7 @@ export default class Coin {
     this.frameTimer = 0;
     this.dead = false;
 
-    this.shadow = scene.add.ellipse(x, y + 7, 10, 3, 0x000000, 0.25).setDepth(-1);
+    this.shadow = scene.add.ellipse(x, y + 7, 10, 3, 0x000000, 0.25).setDepth(DEPTH.shadow);
     this.sprite = scene.add.sprite(x, y, "coin", this.frame).setDepth(y);
     this.rect = new Phaser.Geom.Rectangle(x - 6.5, y - 6.5, 13, 13);
   }

@@ -1,18 +1,25 @@
-# MathBoy – versione browser (prototipo)
+# MathBoy – versione browser
 
-Il livello 1 (Mondo Z, stanza 1) riscritto in JavaScript con [Phaser 3](https://phaser.io), per verificare il lag e l'accesso dal browser.
-Contiene solo le meccaniche principali: movimento, sparo +/−, nemici-numero, monete, vite e porta.
+Porting graduale di MathBoy (gioco desktop in Python + pygame) nel browser, con [Phaser 3](https://phaser.io).
+Non c'è nessun build step e nessuna dipendenza da installare: sono moduli JavaScript serviti così come sono.
+
+**Stato attuale:** Mondo Z, stanze 1 e 2. Ci sono baule e dialoghi, armi che si sbloccano, nemici-numero, monete, vite e statistiche finali.
+
+Si gioca su https://sarakka.github.io/MathBoy_Web/.
 
 ## Comandi
 
 | Tasto | Azione |
 |---|---|
 | W A S D | muoversi |
-| click sinistro | spara +1 |
-| click destro | spara −1 |
-| rotella | cambia numero (per ora c'è solo 1) |
+| click sinistro | spara + (dopo averlo sbloccato) |
+| click destro | spara − (dopo averlo sbloccato) |
+| rotella | cambia numero |
+| E | apre il baule e chiude i dialoghi |
 | F3 | mostra/nasconde FPS e renderer (WebGL/Canvas) |
-| R | rigioca (a fine partita) |
+| R | rigioca (game over / fine) |
+
+Per cambiare lingua si aggiunge `?lang=en` all'indirizzo (anche `es`, `fr`, `de`). La scelta resta salvata nel browser.
 
 ## Provarlo in locale
 
@@ -24,22 +31,61 @@ python -m http.server 8000
 
 Poi apri http://localhost:8000.
 
-## Rigenerare gli asset
-
-Mappa, font bitmap, sprite e suoni in `assets/` sono generati dalla versione desktop (Python, repo separato) con il suo script `tools/export_level_web.py`.
-Lo script scrive direttamente in questa cartella, se si trova accanto al progetto Python con il nome `MathBoy-web`.
-
 ## Struttura
 
-- `index.html`: la pagina con il canvas.
-- `lib/phaser.min.js`: Phaser 3.90, copiato nel repo apposta perché le reti scolastiche spesso bloccano le CDN.
-- `src/main.js`: configurazione: superficie 640×360 scalata, pixel art.
-- `src/settings.js`: costanti prese dal gioco Python (velocità, HP, danni).
-- `src/scenes/Level1Scene.js`: il livello: collisioni, nemici, monete, vittoria e sconfitta.
-- `src/entities/`: `Player`, `Bullet`, `EnemyNumber`, `Coin`.
-- `src/ui/Hud.js`: cuori, monete, selettore, bottoni +/−, FPS, cursore, titolo.
+```
+index.html
+lib/phaser.min.js        Phaser 3.90, copiato nel repo: le reti scolastiche spesso bloccano le CDN
+assets/                  generati dal progetto Python (tools/export_level_web.py), non modificare a mano
+  maps/                  <mappa>.png (terreno) + <mappa>.json (oggetti Tiled)
+  sprites/  sfx/  fonts/ font bitmap ricavati da Gold.ttf
+  locales/               traduzioni esportate dai locale Python
+src/
+  main.js                configurazione di Phaser
+  config/
+    settings.js          costanti prese dal gioco Python (velocità, HP, danni, profondità)
+    worlds.js            mondi e stanze: mappa, livello dei nemici, contenuto del baule
+    webStrings.js        stringhe che esistono solo nella versione web
+  core/
+    run.js               dati della partita che passano tra le stanze (HP, vite, armi, monete)
+    i18n.js              traduzioni: t("chiave")
+    utils.js             collisioni, palline sfumate, testo con ombra
+  math/equations.js      generazione dei nemici per livello
+  scenes/
+    BootScene.js         caricamento degli asset
+    LevelScene.js        una stanza qualsiasi di un mondo
+    StatsScene.js        riepilogo di fine mondo
+  entities/              Player, Bullet, Coin, Chest, Door, enemies/
+  ui/                    Hud, DialogBox, weaponIcon, floatingReward
+```
+
+**Corrispondenza con il Python:**
+
+| Python | Web |
+|---|---|
+| `game_manager.py`: `data`, `treasure_config_*`, `levels_*` | `core/run.js`, `config/worlds.js` |
+| `level_base.py` + `level_Z.py` | `scenes/LevelScene.js` |
+| `entities/*.py`, `ui/*.py` | `entities/`, `ui/` |
+| `utils/locales/*.py` | `assets/locales/*.json`, esportati in automatico |
+
+I nomi dei file sono case-sensitive su GitHub Pages: un import scritto con maiuscole o minuscole sbagliate funziona in locale su Windows ma non online.
+
+## Aggiungere una stanza
+
+1. Nel progetto Python, aggiungi la mappa a `MAPS` in `tools/export_level_web.py` e lancia `python tools/export_level_web.py`.
+2. Aggiungi la stanza in `src/config/worlds.js`.
+3. Se i nemici sono di un tipo nuovo, aggiungi il livello in `src/math/equations.js` o una classe in `src/entities/enemies/`.
+
+## Roadmap (indicativa)
+
+1. ~~Mondo Z stanza 1~~, ~~baule e stanza 2~~, poi la stanza 3: valore 2 e rotella.
+2. Intro (nome e personaggio) e menu, come nuove scene.
+3. Mondo Q: carica per × e ÷, frazioni. Serve una piccola libreria di frazioni al posto di sympy.
+4. Mondi con equazioni e polinomi (Z[x], Q[x], EQ).
+5. Statistiche complete: precisione, voto, classifica online.
+6. Multiplayer: richiede un server WebSocket, perché il browser non può usare i socket TCP del server attuale.
 
 ## Pubblicazione
 
-Il workflow `.github/workflows/pages.yml` pubblica il repo su GitHub Pages a ogni push su `main`.
-Si può anche lanciare a mano dalla tab Actions.
+GitHub Pages pubblica il branch `main` così com'è (Settings → Pages → Deploy from a branch).
+Ogni push su `main` va online in circa un minuto.

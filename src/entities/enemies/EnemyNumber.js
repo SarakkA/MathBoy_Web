@@ -1,18 +1,19 @@
-import { ENEMY_SOLVE_DELAY, Op } from "../settings.js";
+import { ENEMY_SOLVE_DELAY, DEPTH, Op } from "../../config/settings.js";
 
-/** Nemico del livello 1: un numero intero da portare a 0 (enemy_number.py, livello 1).
- *  Il desktop lo disegna in LaTeX con matplotlib; qui basta il testo bitmap. */
+/** Nemico-numero intero da portare a 0 (enemy_number.py). Il valore iniziale arriva da
+ *  generateEquation (math/equations.js). Il desktop lo disegna in LaTeX con matplotlib;
+ *  qui basta il testo bitmap. */
 export default class EnemyNumber {
-  constructor(scene, x, y) {
+  constructor(scene, x, y, value) {
     this.scene = scene;
     this.x = x;
     this.y = y;
-    this.value = Phaser.Math.Between(1, 9);
+    this.value = value;
     this.solved = false;
     this.solveTimer = null;
     this.dead = false;
 
-    this.shadow = scene.add.ellipse(x, y + 9, 14, 4, 0x000000, 0.25).setDepth(-1);
+    this.shadow = scene.add.ellipse(x, y + 9, 14, 4, 0x000000, 0.25).setDepth(DEPTH.shadow);
     this.text = scene.add.bitmapText(x, y, "gold16", "").setOrigin(0.5).setTint(0x000000).setDepth(y);
     this.hitbox = new Phaser.Geom.Rectangle();
     this.refresh();
