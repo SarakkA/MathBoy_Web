@@ -1,0 +1,11 @@
+{
+ "width": 480,
+ "height": 1280,
+ "player": null,
+ "enemies": [],
+ "obstacles": [],
+ "water": [],
+ "door": null,
+ "chest": null,
+ "tutorial": null
+}

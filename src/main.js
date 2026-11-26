@@ -1,5 +1,7 @@
 import { LOGICAL_WIDTH, LOGICAL_HEIGHT } from "./config/settings.js";
 import BootScene from "./scenes/BootScene.js";
+import IntroScene from "./scenes/IntroScene.js";
+import MenuScene from "./scenes/MenuScene.js";
 import LevelScene from "./scenes/LevelScene.js";
 import StatsScene from "./scenes/StatsScene.js";
 
@@ -23,5 +25,5 @@ window.game = new Phaser.Game({
     mouse: { preventDefaultWheel: true },
     activePointers: 3, // multitocco: joystick + bottone insieme
   },
-  scene: [BootScene, LevelScene, StatsScene],
+  scene: [BootScene, IntroScene, MenuScene, LevelScene, StatsScene],
 });

@@ -17,6 +17,7 @@ export const ENEMY_SOLVE_DELAY = 1;  // s tra lo 0 e la sparizione del nemico, e
 export const CHEST_FRAME_TIME = 0.15; // s per frame dell'apertura del baule, tesoro.py
 export const TEXT_SPEED = 0.02;      // s per carattere del dialogo, interactable.py
 export const ROOM_FADE_MS = 400;     // dissolvenza tra le stanze
+export const CHARGE_TIME = 0.5;      // s di pressione per sparare × o ÷ (level_base.py min_charge_time)
 
 // profondita' (depth) dei livelli di disegno
 export const DEPTH = {
@@ -31,4 +32,5 @@ export const DEPTH = {
   cursor: 2000,
 };
 
-export const Op = { ADD: "+", SUB: "-" };
+// il valore e' anche il simbolo mostrato nel testo fluttuante (floating_text.py)
+export const Op = { ADD: "+", SUB: "-", MUL: "x", DIV: "÷" };

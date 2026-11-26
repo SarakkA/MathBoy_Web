@@ -1,16 +1,17 @@
 // Strato di input unico: la scena chiede "dove mi muovo / dove miro" e riceve le azioni
-// (sparo, interazione, cambio valore, ricomincia) senza sapere se arrivano da
-// tastiera+mouse o dal touch.
+// (pressione e rilascio dei tasti di sparo, interazione, cambio valore, ricomincia)
+// senza sapere se arrivano da tastiera+mouse o dal touch.
+// Sparo: "add" = tasto sinistro / bottone +, "sub" = tasto destro / bottone -.
+// Pressione e rilascio sono separati perche' tenendo premuto si carica × o ÷.
 //
 // Modalita' decisa dall'ultimo input usato: un tocco passa a "touch", un tasto o il
 // mouse passano a "desktop". Resta salvata nel registry, quindi vale tra le stanze.
-import { Op } from "../config/settings.js";
 import TouchControls from "../ui/TouchControls.js";
 
 export default class InputController {
   /**
-   * handlers: { onShoot(op), onInteract(), onChangeValue(dir), onRestart(), onToggleFps(),
-   *             canRestart() -> bool }
+   * handlers: { onFirePress(kind), onFireRelease(kind), onInteract(), onChangeValue(dir),
+   *             onRestart(), onToggleFps(), canRestart() -> bool }   kind: "add" | "sub"
    */
   constructor(scene, hud, handlers) {
     this.scene = scene;
@@ -55,15 +56,14 @@ export default class InputController {
     }
     if (this.isTouch) {
       const action = this.touch.down(p);
-      if (action === "add") this.h.onShoot(Op.ADD);
-      else if (action === "sub") this.h.onShoot(Op.SUB);
+      if (action === "add" || action === "sub") this.h.onFirePress(action);
       else if (action === "interact") this.h.onInteract();
       else if (action === "value") this.h.onChangeValue(null); // null = valore successivo, ciclico
       return;
     }
     this.hud.notifyClick(p.button);
-    if (p.button === 0) this.h.onShoot(Op.ADD);
-    else if (p.button === 2) this.h.onShoot(Op.SUB);
+    if (p.button === 0) this.h.onFirePress("add");
+    else if (p.button === 2) this.h.onFirePress("sub");
   }
 
   onMove(p) {
@@ -73,10 +73,13 @@ export default class InputController {
 
   onUp(p) {
     if (p.wasTouch) {
-      this.touch.up(p);
+      const released = this.touch.up(p);
+      if (released) this.h.onFireRelease(released);
       this.tryFullscreen();
     } else {
       this.hud.notifyRelease(p.button);
+      if (p.button === 0) this.h.onFireRelease("add");
+      else if (p.button === 2) this.h.onFireRelease("sub");
     }
   }
 

@@ -16,12 +16,20 @@
       font: 20px sans-serif; align-items: center; justify-content: center; text-align: center;
     }
     @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
+    /* campo del nome invisibile: serve solo a far comparire la tastiera del telefono.
+       font-size 16px evita lo zoom automatico di iOS sul focus */
+    #name-input {
+      position: fixed; left: 0; bottom: 0; width: 1px; height: 1px; opacity: 0;
+      border: 0; padding: 0; font-size: 16px; pointer-events: none;
+    }
     #old-browser { color: #fff; font: 16px sans-serif; padding: 2em; }
   </style>
 </head>
 <body>
   <div id="game"></div>
   <div id="rotate">Ruota il telefono</div>
+  <input id="name-input" type="text" maxlength="12" autocomplete="off" autocorrect="off"
+         autocapitalize="off" spellcheck="false" enterkeyhint="done" aria-label="Nome">
   <!-- Phaser copiato nel repo: niente CDN, che le reti scolastiche spesso bloccano -->
   <script src="lib/phaser.min.js"></script>
   <script type="module" src="src/main.js"></script>

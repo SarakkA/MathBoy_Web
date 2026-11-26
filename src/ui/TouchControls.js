@@ -76,12 +76,14 @@ export default class TouchControls {
     this.direction = len / JOY_RADIUS < DEAD_ZONE ? { x: 0, y: 0 } : { x: dx / Math.hypot(dx, dy), y: dy / Math.hypot(dx, dy) };
   }
 
+  /** ritorna "add" | "sub" se e' stato rilasciato un bottone di sparo (per la carica) */
   up(p) {
     if (p.id === this.joyId) this.releaseJoystick();
-    if (this.buttonPointers.has(p.id)) {
-      this.hud.notifyRelease(this.buttonPointers.get(p.id) === 0 ? 0 : 2);
-      this.buttonPointers.delete(p.id);
-    }
+    if (!this.buttonPointers.has(p.id)) return null;
+    const i = this.buttonPointers.get(p.id);
+    this.buttonPointers.delete(p.id);
+    this.hud.notifyRelease(i === 0 ? 0 : 2);
+    return i === 0 ? "add" : "sub";
   }
 
   releaseJoystick() {

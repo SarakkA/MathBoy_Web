@@ -8,6 +8,11 @@ export const WEB_STRINGS = {
     "web.demo_end": "Fine della demo web",
     "web.restart_touch": "Tocca per rigiocare",
     "web.rotate": "Ruota il telefono",
+    "web.continue": "Premi R per continuare",
+    "web.continue_touch": "Tocca per continuare",
+    "web.confirm": "OK",
+    "web.coming_soon": "Presto anche sul web",
+    "web.tap_start": "Tocca per iniziare",
   },
   en: {
     "web.restart": "Press R to play again",
@@ -16,5 +21,10 @@ export const WEB_STRINGS = {
     "web.demo_end": "End of the web demo",
     "web.restart_touch": "Tap to play again",
     "web.rotate": "Rotate your phone",
+    "web.continue": "Press R to continue",
+    "web.continue_touch": "Tap to continue",
+    "web.confirm": "OK",
+    "web.coming_soon": "Coming soon on the web",
+    "web.tap_start": "Tap to start",
   },
 };

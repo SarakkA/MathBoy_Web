@@ -1,11 +1,12 @@
 import {
-  LOGICAL_WIDTH as W, LOGICAL_HEIGHT as H, CONTACT_DPS, DEATH_DURATION, ROOM_FADE_MS, DEPTH, Op,
+  LOGICAL_WIDTH as W, LOGICAL_HEIGHT as H, CONTACT_DPS, DEATH_DURATION, ROOM_FADE_MS, CHARGE_TIME, DEPTH, Op,
 } from "../config/settings.js";
 import { WORLDS } from "../config/worlds.js";
 import { overlaps } from "../core/utils.js";
 import { t } from "../core/i18n.js";
 import { newRun, selectedValue, changeValue, cycleValue, applyChestEffect } from "../core/run.js";
 import InputController from "../core/input.js";
+import { getProfile } from "../core/profile.js";
 import { generateEquation } from "../math/equations.js";
 import Player from "../entities/Player.js";
 import Bullet from "../entities/Bullet.js";
@@ -48,7 +49,7 @@ export default class LevelScene extends Phaser.Scene {
     this.chest = this.room.chest && L.chest ? new Chest(this, L.chest, this.room.chest) : null;
     if (this.room.tutorial && L.tutorial) this.createTutorial(L.tutorial);
 
-    this.player = new Player(this, L.player.x, L.player.y);
+    this.player = new Player(this, L.player.x, L.player.y, run.skin);
     this.enemies = L.enemies.map((e) => new EnemyNumber(this, e.x, e.y, generateEquation(this.room.enemyLevel)));
     this.bullets = [];
     this.coins = [];
@@ -74,16 +75,20 @@ export default class LevelScene extends Phaser.Scene {
     this.popSound = this.sound.add("pop_sfx", { volume: 0.35 });
     this.coinSound = this.sound.add("coin_sfx", { volume: 0.25 });
 
-    this.hud = new Hud(this, run, { titleKey: run.room === 0 ? this.world.titleKey : null });
+    this.hud = new Hud(this, run, {
+      titleKey: run.room === 0 ? this.world.titleKey : null,
+      playerName: getProfile().name,
+    });
     this.dialog = new DialogBox(this);
     this.aimDots = this.add.graphics().setDepth(DEPTH.worldFx - 40); // mira in modalita' touch
 
     // input: tastiera+mouse o touch, la scena riceve solo le azioni (core/input.js)
     this.controls = new InputController(this, this.hud, {
-      onShoot: (op) => this.shoot(op),
+      onFirePress: (kind) => this.firePress(kind),
+      onFireRelease: (kind) => this.fireRelease(kind),
       onInteract: () => this.interact(),
       onChangeValue: (dir) => (dir === null ? cycleValue(run) : changeValue(run, dir)),
-      onRestart: () => this.scene.start("Level", { run: newRun(run.world) }),
+      onRestart: () => this.scene.start("Menu"),
       onToggleFps: () => this.hud.toggleFps(),
       canRestart: () => this.gameState === "lost",
     });
@@ -91,6 +96,7 @@ export default class LevelScene extends Phaser.Scene {
     this.elapsed = 0;
     this.rush = false;
     this.deathTimer = 0;
+    this.charging = { add: null, sub: null }; // secondi di pressione, null = non in carica
   }
 
   /** scritte e tasti a terra della prima stanza (level_Z.py load_ground_instructions) */
@@ -119,10 +125,40 @@ export default class LevelScene extends Phaser.Scene {
     return this.gameState === "play" && !this.player.isDead && !this.player.locked;
   }
 
+  /** tasto sinistro / bottone + ("add"), tasto destro / bottone - ("sub") premuto.
+   *  Se × (o ÷) e' sbloccato parte la carica, altrimenti spara subito (level_base.py). */
+  firePress(kind) {
+    if (!this.canAct()) return;
+    const run = this.run;
+    const allowed = kind === "add" ? run.canAdd : run.canSub;
+    const canCharge = kind === "add" ? run.canMul : run.canDiv;
+    if (!allowed) return;
+    if (canCharge) this.charging[kind] = 0;
+    else this.shoot(kind === "add" ? Op.ADD : Op.SUB);
+  }
+
+  /** rilascio: carica piena -> × o ÷, altrimenti + o - */
+  fireRelease(kind) {
+    const t0 = this.charging[kind];
+    this.charging[kind] = null;
+    if (t0 === null || !this.canAct()) return;
+    const full = t0 >= CHARGE_TIME;
+    if (kind === "add") this.shoot(full ? Op.MUL : Op.ADD);
+    else this.shoot(full ? Op.DIV : Op.SUB);
+  }
+
+  updateCharge(dt) {
+    ["add", "sub"].forEach((kind, i) => {
+      if (this.charging[kind] !== null && !this.canAct()) this.charging[kind] = null;
+      if (this.charging[kind] !== null) this.charging[kind] += dt;
+      const t0 = this.charging[kind];
+      this.hud.setCharge(i, t0 === null ? 0 : Math.min(1, t0 / CHARGE_TIME));
+    });
+  }
+
   /** spara verso il mouse (desktop) o dove guarda il player (touch) */
   shoot(op) {
     if (!this.canAct()) return;
-    if ((op === Op.ADD && !this.run.canAdd) || (op === Op.SUB && !this.run.canSub)) return;
     const c = this.player.center;
     const aim = this.controls.getAim(c);
     this.bullets.push(new Bullet(this, c.x, c.y, c.x + aim.x, c.y + aim.y, op, selectedValue(this.run)));
@@ -190,6 +226,7 @@ export default class LevelScene extends Phaser.Scene {
     this.player.update(dt, this.controls.getMove(), this.controls.getAim(c), this.playerObstacles);
     const nearChest = this.chest && !this.player.isDead && overlaps(this.player.hitbox, this.chest.area);
     this.controls.update(Boolean(nearChest || this.dialog.active));
+    this.updateCharge(dt);
 
     // --- baule ---
     if (this.chest) {
@@ -302,7 +339,7 @@ export default class LevelScene extends Phaser.Scene {
     const w = 15;
     const h = 4;
     const x = Math.round(p.sprite.x - w / 2);
-    const y = Math.round(p.sprite.y + 24);
+    const y = Math.round(p.spriteBottom);
     const ratio = Math.max(0, this.run.hp / this.run.hpMax);
     this.hpBar.clear();
     this.hpBar.fillStyle(0x780000, 0.55).fillRect(x, y, w, h);
@@ -322,7 +359,7 @@ export default class LevelScene extends Phaser.Scene {
     const fixed = (o) => o.setScrollFactor(0).setDepth(DEPTH.overlay);
     fixed(this.add.rectangle(0, 0, W, H, 0x000000, 0.6).setOrigin(0));
     fixed(this.add.bitmapText(W / 2, H / 2 - 40, "gold24", t("stats.game_over")).setOrigin(0.5));
-    const restart = t(this.controls.isTouch ? "web.restart_touch" : "web.restart");
+    const restart = t(this.controls.isTouch ? "web.continue_touch" : "web.continue");
     const lines = [t("web.enemies_left", { v: this.enemies.length }), "", restart];
     fixed(this.add.bitmapText(W / 2, H / 2 + 10, "gold12", lines.join("\n"), 12, 1).setOrigin(0.5));
   }

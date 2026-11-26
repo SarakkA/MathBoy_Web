@@ -1,0 +1,27 @@
+{
+ "gold12": {
+  "lineHeight": 12,
+  "digitTop": 2,
+  "digitBottom": 10
+ },
+ "gold16": {
+  "lineHeight": 16,
+  "digitTop": 3,
+  "digitBottom": 14
+ },
+ "gold24": {
+  "lineHeight": 24,
+  "digitTop": 4,
+  "digitBottom": 20
+ },
+ "gold32": {
+  "lineHeight": 32,
+  "digitTop": 6,
+  "digitBottom": 27
+ },
+ "gold48": {
+  "lineHeight": 48,
+  "digitTop": 8,
+  "digitBottom": 40
+ }
+}

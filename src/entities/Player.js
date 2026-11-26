@@ -1,37 +1,21 @@
 import { PLAYER_SPEED } from "../config/settings.js";
+import { SKINS, DEATH_FRAME_TIME, SPRITE_TOP } from "../config/skins.js";
 import { overlaps } from "../core/utils.js";
 
-// Righe dello sprite sheet 48x48 (player.py load_animation_sprite): [riga, specchiata]
-const ANIMS = {
-  idle_down: [0, false],
-  idle_right: [1, false],
-  idle_right_up: [1, false],
-  idle_up: [2, false],
-  down: [3, false],
-  right: [4, false],
-  right_up: [4, false],
-  up: [5, false],
-  death: [9, false],
-  left: [4, true],
-  left_up: [4, true],
-  idle_left: [1, true],
-  idle_left_up: [1, true],
-};
 // settori di 60° attorno al player, da atan2 (level_base.py handle_player_input)
 const SECTORS = ["left_up", "up", "right_up", "right", "down", "left"];
-
-const FRAME_TIME = 7 / 60;   // animation_speed 7 frame a 60 FPS
-const DEATH_FRAME_TIME = 30 / 60;
-const HITBOX_W = 12;         // 48x48 ridotto di 36x32
+const HITBOX_W = 12; // 48x48 ridotto di 36x32
 const HITBOX_H = 16;
-const SPRITE_ABOVE_HITBOX = 9; // reset_hitbox_to_rect_y: rect.centery = hitbox.centery - 9
 
-/** Movimento, collisioni e animazione. HP, vite, monete e armi stanno nella run (core/run.js). */
+/** Movimento, collisioni e animazione. HP, vite, monete e armi stanno nella run (core/run.js).
+ *  skin: indice in SKINS (config/skins.js), scelto nell'intro. */
 export default class Player {
-  constructor(scene, x, y) {
+  constructor(scene, x, y, skin = 0) {
     this.scene = scene;
+    this.skin = SKINS[skin] || SKINS[0];
     this.hitbox = new Phaser.Geom.Rectangle(x - HITBOX_W / 2, y - HITBOX_H / 2, HITBOX_W, HITBOX_H);
-    this.sprite = scene.add.sprite(x, y - SPRITE_ABOVE_HITBOX, "player", 0);
+    this.shadow = this.skin.shadow ? scene.add.image(x, y, "shadow").setOrigin(0.5, 0) : null;
+    this.sprite = scene.add.sprite(x, y, this.skin.anims.idle_up[0], 0).setOrigin(0.5, 0);
 
     this.speed = PLAYER_SPEED;
     this.isDead = false;
@@ -47,7 +31,12 @@ export default class Player {
     return { x: this.hitbox.centerX, y: this.hitbox.centerY };
   }
 
-  /** dir: {x,y} da WASD (non normalizzato); aim: vettore player -> mouse in coordinate mondo */
+  /** bordo basso dello sprite (sotto ci va la barra della vita, come health_bar.py) */
+  get spriteBottom() {
+    return this.hitbox.centerY - SPRITE_TOP + 48;
+  }
+
+  /** dir: {x,y} di movimento (non normalizzato); aim: vettore player -> punto di mira */
   update(dt, dir, aim, obstacles) {
     if (this.isDead) {
       this.state = "death";
@@ -55,7 +44,7 @@ export default class Player {
       return;
     }
     if (this.locked) {
-      this.animate(dt, 1, FRAME_TIME);
+      this.animate(dt, 1, this.skin.frameTime);
       return;
     }
 
@@ -74,7 +63,7 @@ export default class Player {
     if (moving) this.verso = aim.x * dx + aim.y * dy > 0 ? 1 : -1;
 
     this.move(dt, dx, dy, obstacles);
-    this.animate(dt, this.verso, FRAME_TIME);
+    this.animate(dt, this.verso, this.skin.frameTime);
   }
 
   // asse x poi asse y, respingendo la hitbox fuori dagli ostacoli (player.py move/collision)
@@ -96,8 +85,7 @@ export default class Player {
   }
 
   animate(dt, step, frameTime) {
-    const [row, flip] = ANIMS[this.state];
-    const count = this.state === "death" ? 3 : 6;
+    const [texture, row, flip, count] = this.skin.anims[this.state];
     this.frameTimer += dt;
     if (this.frameTimer >= frameTime) {
       this.frameTimer = 0;
@@ -108,7 +96,8 @@ export default class Player {
       }
     }
     this.frameIndex %= count;
-    this.sprite.setFrame(row * 6 + this.frameIndex);
+    if (this.sprite.texture.key !== texture) this.sprite.setTexture(texture);
+    this.sprite.setFrame(row * this.skin.cols + this.frameIndex);
     this.sprite.setFlipX(flip);
   }
 
@@ -133,7 +122,9 @@ export default class Player {
   }
 
   sync() {
-    this.sprite.setPosition(this.hitbox.centerX, this.hitbox.centerY - SPRITE_ABOVE_HITBOX);
-    this.sprite.setDepth(this.hitbox.bottom);
+    const x = this.hitbox.centerX;
+    const top = this.hitbox.centerY - SPRITE_TOP;
+    this.sprite.setPosition(x, top).setDepth(this.hitbox.bottom);
+    if (this.shadow) this.shadow.setPosition(x, top).setDepth(this.hitbox.bottom - 0.01);
   }
 }

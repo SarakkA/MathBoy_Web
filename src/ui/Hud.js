@@ -6,15 +6,19 @@ const CHAPTER_FADE_IN = 0.8;
 const CHAPTER_HOLD = 2.5;
 const CHAPTER_FADE_OUT = 1.0;
 const BUTTON_UP = 4;   // offset dei bottoni +/- da rilasciati (level_base.py button_offset)
+const CHARGE_RADIUS = 14; // charge_circle.py, attorno ai bottoni +/-
 
 /** HUD a schermo fisso (hud.py + cuori + titolo del capitolo + contatore FPS + cursore).
  *  Legge tutto dalla run, cosi' resta allineato quando un baule sblocca qualcosa. */
 export default class Hud {
-  constructor(scene, run, { titleKey = null } = {}) {
+  constructor(scene, run, { titleKey = null, playerName = "" } = {}) {
     this.scene = scene;
     this.run = run;
     const fixed = (o) => o.setScrollFactor(0).setDepth(DEPTH.hud);
     this.fixed = fixed;
+
+    // nome del giocatore (hud.py: topleft 12, 12)
+    if (playerName) shadowText(scene, 12, 12, "gold12", playerName).setScrollFactor(0).setDepth(DEPTH.hud);
 
     // cuori in alto a sinistra (level_Z.py: pos = (10 + i*20, 25))
     this.hearts = [];
@@ -35,8 +39,8 @@ export default class Hud {
     this.buttonOffset = [BUTTON_UP, BUTTON_UP];
     this.touchMode = false;
     this.buttons = [
-      { desk: { x: W - 84, y: H - 44 }, touch: { x: W - 112, y: H - 46 }, color: BLU, key: "ball_btn_add", sym: "+" },
-      { desk: { x: W - 44, y: H - 44 }, touch: { x: W - 50, y: H - 46 }, color: ROSSO, key: "ball_btn_sub", sym: "-" },
+      { desk: { x: W - 84, y: H - 44 }, touch: { x: W - 112, y: H - 46 }, color: BLU, key: "ball_btn_add", sym: "+", full: "×" },
+      { desk: { x: W - 44, y: H - 44 }, touch: { x: W - 50, y: H - 46 }, color: ROSSO, key: "ball_btn_sub", sym: "-", full: "÷" },
     ].map((b) => ({
       ...b,
       x: b.desk.x,
@@ -45,6 +49,11 @@ export default class Hud {
       ball: fixed(scene.add.image(b.desk.x, b.desk.y, shadedBall(scene, b.key, 12, b.color))),
       label: fixed(scene.add.bitmapText(b.desk.x + 1, b.desk.y - 2, "gold32", b.sym).setOrigin(0.5)),
     }));
+
+    // carica di × e ÷: arco che si riempie, poi anello che pulsa (charge_circle.py)
+    this.charge = [0, 0];
+    this.pulse = 0;
+    this.chargeGfx = scene.add.graphics().setScrollFactor(0).setDepth(DEPTH.hud + 1);
 
     // FPS + renderer: serve a misurare il lag (F3 per nascondere)
     this.renderer = scene.game.renderer.type === Phaser.WEBGL ? "WebGL" : "Canvas";
@@ -88,6 +97,11 @@ export default class Hud {
   /** centri delle palline del selettore valori (per le aree di tocco) */
   selectorPositions() {
     return this.selector.map((s) => ({ x: s.ball.x, y: s.ball.y }));
+  }
+
+  /** i: 0 = bottone +/×, 1 = bottone -/÷; ratio da 0 a 1 (0 = non in carica) */
+  setCharge(i, ratio) {
+    this.charge[i] = ratio;
   }
 
   notifyClick(button) {
@@ -144,9 +158,27 @@ export default class Hud {
     });
 
     const allowed = [run.canAdd, run.canSub];
+    const scale = this.touchMode ? 22 / 12 : 1;
+    this.chargeGfx.clear();
+    this.pulse += dt * 30;
     this.buttons.forEach((b, i) => {
       b.ball.setVisible(allowed[i]).setY(b.baseY - this.buttonOffset[i]);
-      b.label.setVisible(allowed[i]).setY(b.baseY - 2 - this.buttonOffset[i]);
+      const full = this.charge[i] >= 1;
+      // a carica piena + diventa × (font 24 come big_fontx di hud.py) e - diventa ÷
+      b.label.setFont(full && b.full === "×" ? "gold24" : "gold32").setText(full ? b.full : b.sym)
+        .setVisible(allowed[i]).setY(b.baseY - 2 - this.buttonOffset[i]);
+      const ratio = this.charge[i];
+      if (ratio <= 0 || !allowed[i]) return;
+      const r = CHARGE_RADIUS * scale;
+      if (!full) {
+        const start = -Math.PI / 2;
+        this.chargeGfx.lineStyle(2, 0xffffff, 1).beginPath()
+          .arc(b.x, b.baseY - 1, r, start, start + ratio * Math.PI * 2).strokePath();
+      } else {
+        const p = (Math.sin(this.pulse) + 1) / 2;
+        const thick = Math.floor(p * 3) + 2;
+        this.chargeGfx.lineStyle(thick, 0xffffff, 1).strokeCircle(b.x, b.baseY, r - 1 + thick / 2);
+      }
     });
 
     this.fpsTimer -= dt;
@@ -171,7 +203,7 @@ export default class Hud {
     if (this.clickT > 0) this.clickT = Math.max(0, this.clickT - dt);
     if (this.touchMode) return;
     const pop = this.clickT / 0.12;
-    const g = 8 + 4 * pop;
+    const g = 8 - 4 * Math.max(this.charge[0], this.charge[1]) + 4 * pop; // si stringe in carica
     const tick = 4;
     const px = Math.round(pointer.x);
     const py = Math.round(pointer.y);
