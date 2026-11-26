@@ -1,7 +1,7 @@
 import { LOGICAL_WIDTH as W, LOGICAL_HEIGHT as H } from "../config/settings.js";
 import { WORLDS } from "../config/worlds.js";
 import { t } from "../core/i18n.js";
-import { completeWorld, addSurvivorResult } from "../core/profile.js";
+import { completeWorld, addSurvivorResult, addParametricResult } from "../core/profile.js";
 
 const WORLD_LABELS = {
   Q: "menu.btn.world_q", ZX: "menu.btn.world_zx", QX: "menu.btn.world_qx", EQ: "menu.btn.world_eq",
@@ -17,7 +17,8 @@ export function formatDuration(seconds) {
 /** Riepilogo a fine partita (stats_state.py, in versione ridotta: niente voto,
  *  precisione e classifica online per ora).
  *  Campagna: { run }  -> sblocca il mondo successivo.
- *  Survivor: { mode: "survivor", score, runTime, level, kills } -> salva il record. */
+ *  Survivor: { mode: "survivor", score, runTime, level, kills } -> salva il record.
+ *  Parametrico: { mode: "parametric", score, runTime } -> salva il record. */
 export default class StatsScene extends Phaser.Scene {
   constructor() {
     super("Stats");
@@ -43,6 +44,13 @@ export default class StatsScene extends Phaser.Scene {
       lines = [
         t("stats.coins", { v: d.score }),
         t("stats.level_reached", { v: d.level }),
+        t("stats.time", { v: formatDuration(d.runTime) }),
+      ];
+    } else if (d.mode === "parametric") {
+      addParametricResult(d.score);
+      title = t("stats.game_over");
+      lines = [
+        t("stats.score", { v: d.score }),
         t("stats.time", { v: formatDuration(d.runTime) }),
       ];
     } else {

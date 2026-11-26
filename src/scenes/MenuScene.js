@@ -17,7 +17,7 @@ const EXTRA_ROW = [
   { label: "menu.btn.one_minute", scene: null },
   { label: "Survivor", scene: "Survivor" },
   { label: "MultiPlayer", scene: null },
-  { label: "menu.btn.literal", scene: null },
+  { label: "menu.btn.literal", scene: "Parametric" },
   { label: "menu.btn.leaderboards", scene: null },
 ];
 // personaggio in alto a sinistra che guarda il mouse (menu_state.py animate_skin)

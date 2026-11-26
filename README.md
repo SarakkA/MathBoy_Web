@@ -11,6 +11,7 @@ Non c'è nessun build step e nessuna dipendenza da installare: sono moduli JavaS
   - Eqz: equazioni di primo grado da portare a "x = numero";
 - baule e dialoghi, armi che si sbloccano, monete, vite, statistiche e sblocco del mondo successivo;
 - modalità **Survivor**: ondate infinite, boss-equazione con minion, carte potenziamento a ogni livello, pozioni ghiaccio / elettrico / fuoco;
+- modalità **Parametrico**: equazioni con i parametri a e b che cadono dall'alto, munizioni a, b, −1, 2; si perde una vita se toccano la striscia rossa;
 - pagina dei **crediti**.
 
 Per ora è tutto già sbloccato, per poter provare subito ogni modalità: `UNLOCK_EVERYTHING` in `src/core/profile.js` (rimettere a `false` per tornare alla progressione normale).
@@ -83,6 +84,7 @@ src/
     linear.js            espressioni a·x + b ed equazioni di primo grado
     tokens.js            da espressione a pezzi da impaginare (convenzioni del LaTeX di sympy)
     generators.js        formule dei nemici per tipo e livello
+    symbolic.js          Parametrico: equazioni con a e b (forma iniziale come sympy, poi cancel)
   scenes/
     BootScene.js         caricamento degli asset
     IntroScene.js        titolo, nome, scelta del personaggio
@@ -90,11 +92,13 @@ src/
     BaseLevelScene.js    parte comune di ogni modalità su mappa: player, sparo, carica, proiettili, monete, danno
     LevelScene.js        una stanza qualsiasi di un mondo (porta, baule, tutorial)
     SurvivorScene.js     modalità Survivor
+    ParametricScene.js   modalità Parametrico
     StatsScene.js        riepilogo di fine mondo o di fine Survivor
     CreditsScene.js      crediti
   entities/              Player, Bullet, Coin, Chest, Door, Potion, enemies/MathEnemy (numero, polinomio o equazione)
   ui/                    Hud, DialogBox, TouchControls, UpgradeOverlay, mathText, menuBackground, weaponIcon, floatingReward
 tests/algebra.mjs        test del motore algebrico: node tests/algebra.mjs
+tests/parametric.mjs     test del Parametrico contro 120 casi calcolati con sympy: node tests/parametric.mjs
 ```
 
 **Corrispondenza con il Python:**
@@ -106,6 +110,7 @@ tests/algebra.mjs        test del motore algebrico: node tests/algebra.mjs
 | `level_Z.py` (e gli altri mondi) | `scenes/LevelScene.js` |
 | `survivor_state.py`, `upgrade_overlay.py`, `upgrade_speed.py`, `potion.py` | `scenes/SurvivorScene.js`, `config/survivor.js`, `ui/UpgradeOverlay.js`, `entities/Potion.js` |
 | `credits_state.py`, `utils/floaters.py` | `scenes/CreditsScene.js` |
+| `letterale_state.py`, `enemy_parametric.py` | `scenes/ParametricScene.js`, `math/symbolic.js` |
 | `entities/*.py`, `ui/*.py` | `entities/`, `ui/` |
 | `utils/locales/*.py` | `assets/locales/*.json`, esportati in automatico |
 | `intro_state.py`, `menu_state.py`, `stats_state.py` | `scenes/IntroScene.js`, `MenuScene.js`, `StatsScene.js` |
@@ -131,13 +136,15 @@ Il gioco desktop usa sympy per la matematica e LaTeX (matplotlib) per disegnare 
 2. **Pezzi** (`tokens.js`): testo, frazione, segno, operatore. Seguono le convenzioni del LaTeX di sympy: `\frac{3x}{2}` con la x nel numeratore, il meno davanti alla frazione, il termine noto dopo la x.
 3. **Disegno** (`ui/mathText.js`): mette i pezzi su una riga, tutti sullo stesso asse orizzontale. Le frazioni hanno cifre più piccole, impilate attorno a una barra di 1 px. Per allineare l'inchiostro delle cifre senza spazi vuoti usa `assets/fonts/metrics.json`, misurato dallo script di export.
 
+**Parametrico** (`symbolic.js`): ogni lato dell'equazione ha due forme. Prima del primo colpo è un albero costruito con le stesse semplificazioni automatiche di sympy (i numeri si distribuiscono sulle somme, le lettere no), così si vede la struttura, es. `b(x/2 + 1) = 3`. Dopo un colpo diventa la forma di `sympy.cancel`: polinomio espanso diviso un monomio. Anche l'ordine dei termini è quello di sympy (lessicografico a > b > x, con l'eccezione `1 - x`). `tests/parametric.mjs` lo verifica contro sympy.
+
 Il nemico (`MathEnemy`) non sa che formula ha: chiama solo queste tre funzioni. Per un tipo nuovo di formula (es. secondo grado, x su entrambi i lati) basta una classe con la stessa interfaccia.
 
 ## Roadmap (indicativa)
 
-1. ~~Mondo Z~~, ~~intro e menu~~, ~~Mondo Q~~, ~~Z[x], Q[x] ed Eqz con il motore algebrico~~, ~~Survivor~~, ~~crediti~~.
+1. ~~Mondo Z~~, ~~intro e menu~~, ~~Mondo Q~~, ~~Z[x], Q[x] ed Eqz con il motore algebrico~~, ~~Survivor~~, ~~crediti~~, ~~Parametrico~~.
 2. Musica (pesa: va scelto se e come caricarla senza rallentare l'avvio).
-3. Altre modalità extra (1 Minuto, Parametrico), che usano gli stessi nemici-formula.
+3. Modalità 1 Minuto, che usa gli stessi nemici-formula.
 4. Statistiche complete (precisione, voto) e classifica online.
 5. Multiplayer: richiede un server WebSocket, perché il browser non può usare i socket TCP del server attuale.
 

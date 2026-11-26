@@ -11,7 +11,7 @@ const STORY = ["Z", "Q", "ZX", "QX", "EQ"];
 // Rimettere a false per tornare alla progressione normale (Z -> Q -> ... -> EXTRA).
 export const UNLOCK_EVERYTHING = true;
 
-const DEFAULT = { name: "", skin: 0, unlocked: { Z: true }, totalScore: 0, records: { survivor: 0 } };
+const DEFAULT = { name: "", skin: 0, unlocked: { Z: true }, totalScore: 0, records: { survivor: 0, parametric: 0 } };
 
 let profile = load();
 
@@ -65,6 +65,13 @@ export function completeWorld(nextWorld, coins) {
   }
   save();
   return newly;
+}
+
+/** fine del Parametrico: somma le monete e tiene il punteggio piu' alto (add_record_letterale) */
+export function addParametricResult(coins) {
+  profile.totalScore += coins;
+  profile.records.parametric = Math.max(profile.records.parametric || 0, coins);
+  save();
 }
 
 /** fine del Survivor: somma le monete e tiene il livello piu' alto (add_record_survivor) */

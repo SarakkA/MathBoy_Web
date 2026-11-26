@@ -1,0 +1,34 @@
+{
+ "width": 640,
+ "height": 640,
+ "player": {
+  "x": 318.53,
+  "y": 482.0
+ },
+ "enemies": [],
+ "obstacles": [
+  {
+   "x": 563.67,
+   "y": -8.17,
+   "width": 22.0,
+   "height": 658.16
+  },
+  {
+   "x": 59.67,
+   "y": -4.33,
+   "width": 22.0,
+   "height": 649.5
+  },
+  {
+   "x": 72.33,
+   "y": 634.92,
+   "width": 498.0,
+   "height": 15.5
+  }
+ ],
+ "water": [],
+ "door": null,
+ "chest": null,
+ "tutorial": null,
+ "potions": []
+}

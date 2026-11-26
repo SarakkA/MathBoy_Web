@@ -114,5 +114,6 @@ export const STORY_ROW = ["Z", "Q", "ZX", "QX", "EQ"].map((id) => ({ id, labelKe
 export const ALL_MAPS = [
   ...new Set(Object.values(WORLDS).flatMap((w) => w.rooms.map((r) => r.map))),
   "survivor_map",
+  "Letterale_map",   // Parametrico
   "menu_map",
 ];

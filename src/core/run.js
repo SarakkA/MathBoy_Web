@@ -59,6 +59,30 @@ export function newSurvivorRun(skin = 0) {
   };
 }
 
+/** partita Parametrico (game_manager.py default_data_LETTERALE): munizioni a, b, -1, 2
+ *  e tutte le operazioni gia' attive. Le lettere sono le stringhe "a" e "b" (src/math/symbolic.js) */
+export function newParametricRun(skin = 0) {
+  return {
+    mode: "parametric",
+    world: null,
+    skin,
+    room: 0,
+    hp: HP_MAX,
+    hpMax: HP_MAX,
+    lives: 3,
+    score: 0,
+    values: ["a", "b", -1, 2],
+    valueIndex: 0,
+    canAdd: true,
+    canSub: true,
+    canMul: true,
+    canDiv: true,
+    runTime: 0,
+    bulletsFired: 0,
+    coinsSpawned: 0,
+  };
+}
+
 export function selectedValue(run) {
   return run.values[run.valueIndex];
 }
