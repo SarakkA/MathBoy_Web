@@ -53,7 +53,7 @@ I controlli touch compaiono al primo tocco e spariscono appena usi tastiera o mo
 Il server è quello del gioco desktop (`server_online.py`, nel progetto Python), che gira sulla VPS e decide tutto: posizioni, colpi, soluzioni, morti. Il browser non può aprire connessioni TCP, quindi sulla VPS c'è un piccolo ponte WebSocket (`ws_bridge.py`) con Caddy davanti per l'https:
 
 ```
-browser --wss://mathboy.duckdns.org/ws--> Caddy --> ws_bridge.py --tcp--> server_online.py <--tcp-- .exe
+browser --wss://mathboy-game.duckdns.org/ws--> Caddy --> ws_bridge.py --tcp--> server_online.py <--tcp-- .exe
 ```
 
 - L'indirizzo è in `src/net/connection.js` (`ONLINE_SERVER_URL`); per provare in locale si aggiunge `?server=ws://localhost:8770` all'indirizzo del gioco.

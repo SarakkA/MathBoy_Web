@@ -9,7 +9,7 @@
 // un thread e li applica nel ciclo principale).
 
 // indirizzo del ponte in produzione; ?server=ws://localhost:8770 lo sostituisce per i test
-export const ONLINE_SERVER_URL = "wss://mathboy.duckdns.org/ws";
+export const ONLINE_SERVER_URL = "wss://mathboy-game.duckdns.org/ws";
 
 export function serverUrl() {
   const fromQuery = new URLSearchParams(window.location.search).get("server");
