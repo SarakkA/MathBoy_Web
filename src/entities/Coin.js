@@ -2,13 +2,14 @@ import { DEPTH } from "../config/settings.js";
 // Moneta lasciata dal nemico risolto (coin.py): rimbalza, poi si raccoglie toccandola.
 const FRAMES = 7;            // coin2.png: 3 + 3 + 1 frame da 16x16
 const FRAME_TIME = 7 / 60;
-const LIFETIME = 15;         // s
+const LIFETIME = 15;         // s (nel Survivor 150)
 const BLINK_TIME = 3;        // lampeggia negli ultimi 3 s
 const GRAVITY = 400;
 
 export default class Coin {
-  constructor(scene, x, y) {
+  constructor(scene, x, y, lifetime = LIFETIME) {
     this.scene = scene;
+    this.lifetime = lifetime;
     this.x = x;
     this.groundY = y;
     this.z = 0;                 // altezza sopra il terreno
@@ -62,11 +63,11 @@ export default class Coin {
     }
 
     this.timer += dt;
-    if (this.timer >= LIFETIME) {
+    if (this.timer >= this.lifetime) {
       this.destroy();
       return false;
     }
-    if (this.timer >= LIFETIME - BLINK_TIME) {
+    if (this.timer >= this.lifetime - BLINK_TIME) {
       this.sprite.setVisible(Math.floor(this.timer / 0.3) % 2 === 0);
     }
     this.sync();

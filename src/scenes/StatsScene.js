@@ -1,41 +1,65 @@
 import { LOGICAL_WIDTH as W, LOGICAL_HEIGHT as H } from "../config/settings.js";
 import { WORLDS } from "../config/worlds.js";
 import { t } from "../core/i18n.js";
-import { completeWorld } from "../core/profile.js";
+import { completeWorld, addSurvivorResult } from "../core/profile.js";
 
 const WORLD_LABELS = {
   Q: "menu.btn.world_q", ZX: "menu.btn.world_zx", QX: "menu.btn.world_qx", EQ: "menu.btn.world_eq",
   EXTRA: "stats.extra_modes",
 };
 
-/** Riepilogo a fine mondo (stats_state.py, in versione ridotta: niente voto,
- *  precisione e classifica online per ora). Sblocca il mondo successivo e torna al menu. */
+/** "M:SS", anche oltre l'ora (draw_utils.py format_duration) */
+export function formatDuration(seconds) {
+  const s = Math.floor(seconds);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+/** Riepilogo a fine partita (stats_state.py, in versione ridotta: niente voto,
+ *  precisione e classifica online per ora).
+ *  Campagna: { run }  -> sblocca il mondo successivo.
+ *  Survivor: { mode: "survivor", score, runTime, level, kills } -> salva il record. */
 export default class StatsScene extends Phaser.Scene {
   constructor() {
     super("Stats");
   }
 
   init(data) {
-    this.run = data.run;
+    this.data_ = data;
   }
 
   create() {
-    const run = this.run;
-    const world = WORLDS[run.world];
-    const unlocked = completeWorld(world.unlocks, run.score);
-
+    const d = this.data_;
     this.cameras.main.setBackgroundColor("#1e1e1e");
     this.cameras.main.fadeIn(400);
     this.input.setDefaultCursor("default");
 
-    this.add.bitmapText(W / 2, 60, "gold32", t("stats.level_complete")).setOrigin(0.5);
-    this.add.bitmapText(W / 2, 95, "gold12", t(world.titleKey)).setOrigin(0.5).setTint(0xaaaaaa);
+    let title;
+    let subtitle = "";
+    let lines;
+    let unlocked = null;
+    if (d.mode === "survivor") {
+      addSurvivorResult(d.score, d.level);
+      title = t("stats.survivor_complete");
+      lines = [
+        t("stats.coins", { v: d.score }),
+        t("stats.level_reached", { v: d.level }),
+        t("stats.time", { v: formatDuration(d.runTime) }),
+      ];
+    } else {
+      const run = d.run;
+      const world = WORLDS[run.world];
+      unlocked = completeWorld(world.unlocks, run.score);
+      title = t("stats.level_complete");
+      subtitle = t(world.titleKey);
+      lines = [
+        t("stats.time", { v: `${run.runTime.toFixed(1)} s` }),
+        t("stats.coins", { v: `${run.score} / ${run.coinsSpawned}` }),
+        t("web.shots", { v: run.bulletsFired }),
+      ];
+    }
 
-    const lines = [
-      t("stats.time", { v: `${run.runTime.toFixed(1)} s` }),
-      t("stats.coins", { v: `${run.score} / ${run.coinsSpawned}` }),
-      t("web.shots", { v: run.bulletsFired }),
-    ];
+    this.add.bitmapText(W / 2, 60, "gold32", title).setOrigin(0.5);
+    if (subtitle) this.add.bitmapText(W / 2, 95, "gold12", subtitle).setOrigin(0.5).setTint(0xaaaaaa);
     this.add.bitmapText(W / 2, 160, "gold16", lines.join("\n"), 16, 1).setOrigin(0.5);
 
     if (unlocked && WORLD_LABELS[unlocked]) {

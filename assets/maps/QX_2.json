@@ -160,5 +160,6 @@
   "y": 64.0
  },
  "chest": null,
- "tutorial": null
+ "tutorial": null,
+ "potions": []
 }

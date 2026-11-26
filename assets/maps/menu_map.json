@@ -7,5 +7,6 @@
  "water": [],
  "door": null,
  "chest": null,
- "tutorial": null
+ "tutorial": null,
+ "potions": []
 }

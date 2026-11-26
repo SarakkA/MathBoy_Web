@@ -12,12 +12,19 @@ const BTN_H = 30;
 const SPACING_X = 20;
 const SPACING_Y = 40;
 const START_Y = H / 2;
-// modalita' extra del desktop, ancora da portare (restano grigie)
-const EXTRA_ROW = ["menu.btn.one_minute", "Survivor", "MultiPlayer", "menu.btn.literal", "menu.btn.leaderboards"];
+// modalita' extra del desktop: scene = scena gia' portata sul web, null = ancora da portare
+const EXTRA_ROW = [
+  { label: "menu.btn.one_minute", scene: null },
+  { label: "Survivor", scene: "Survivor" },
+  { label: "MultiPlayer", scene: null },
+  { label: "menu.btn.literal", scene: null },
+  { label: "menu.btn.leaderboards", scene: null },
+];
 // personaggio in alto a sinistra che guarda il mouse (menu_state.py animate_skin)
 const DIRS = ["idle_left_up", "idle_up", "idle_right_up", "idle_right", "idle_down", "idle_left"];
 
-/** Menu principale (menu_state.py): riga STORIA con i mondi, riga EXTRA (per ora grigia),
+/** Menu principale (menu_state.py): riga STORIA con i mondi, riga EXTRA con le modalita'
+ *  (quelle non ancora portate restano grigie), Credits in basso,
  *  personaggio, nome, monete totali e bandierina della lingua. */
 export default class MenuScene extends Phaser.Scene {
   constructor() {
@@ -71,12 +78,21 @@ export default class MenuScene extends Phaser.Scene {
       lines.lineStyle(3, a.active && b.active ? 0x6464c8 : 0x505050, 1).lineBetween(a.rect.centerX, y, b.rect.centerX, y);
     }
 
-    // riga EXTRA: modalita' non ancora portate
+    // riga EXTRA: attive solo le modalita' gia' portate (e sbloccate)
     const x1 = rowX(EXTRA_ROW.length);
-    this.extras = EXTRA_ROW.map((key, i) =>
-      new MenuButton(this, x1 + i * (BTN_W + SPACING_X), START_Y + BTN_H + SPACING_Y, BTN_W, BTN_H, t(key), { active: false }));
+    const extraOpen = isUnlocked("EXTRA");
+    this.extras = EXTRA_ROW.map((m, i) =>
+      new MenuButton(this, x1 + i * (BTN_W + SPACING_X), START_Y + BTN_H + SPACING_Y, BTN_W, BTN_H, t(m.label), {
+        active: Boolean(m.scene) && extraOpen,
+        onClick: () => this.startMode(m.scene),
+      }));
 
-    this.error = this.add.bitmapText(W / 2, H - 20, "gold12", "").setOrigin(0.5).setTint(0xff4040);
+    // Credits in basso al centro (sul desktop accanto c'e' Esci, che nel browser non serve)
+    this.creditsBtn = new MenuButton(this, W / 2 - BTN_W / 2, H - BTN_H - 10, BTN_W, BTN_H, t("menu.btn.credits"), {
+      onClick: () => this.goTo("Credits"),
+    });
+
+    this.error = this.add.bitmapText(W / 2, H - 55, "gold12", "").setOrigin(0.5).setTint(0xff4040);
     this.errorTimer = 0;
 
     // trucco del desktop: tenere premuto T per 2 secondi sblocca tutti i mondi
@@ -111,7 +127,13 @@ export default class MenuScene extends Phaser.Scene {
       else if (WORLDS[b.worldId] === undefined) this.showError(t("web.coming_soon"));
       return;
     }
-    if (this.extras.some((b) => b.contains(p.x, p.y))) this.showError(t("web.coming_soon"));
+    for (const b of this.extras) {
+      if (!b.contains(p.x, p.y)) continue;
+      if (b.active) b.onClick();
+      else this.showError(t("web.coming_soon"));
+      return;
+    }
+    if (this.creditsBtn.contains(p.x, p.y)) this.creditsBtn.onClick();
   }
 
   showError(text) {
@@ -120,18 +142,27 @@ export default class MenuScene extends Phaser.Scene {
   }
 
   startWorld(id) {
+    this.goTo("Level", { run: newRun(id, getProfile().skin) });
+  }
+
+  startMode(scene) {
+    this.goTo(scene);
+  }
+
+  /** dissolvenza e cambio scena */
+  goTo(scene, data) {
+    if (this.leaving) return;
     this.leaving = true;
     this.blip.play();
-    const run = newRun(id, getProfile().skin);
     this.cameras.main.fadeOut(400);
-    this.cameras.main.once("camerafadeoutcomplete", () => this.scene.start("Level", { run }));
+    this.cameras.main.once("camerafadeoutcomplete", () => this.scene.start(scene, data));
   }
 
   update(time, delta) {
     const dt = Math.min(delta / 1000, 0.05);
     this.bg.update(dt);
     const pointer = this.input.activePointer;
-    for (const b of [...this.buttons, ...this.extras]) b.update(dt, pointer, this.isTouch);
+    for (const b of [...this.buttons, ...this.extras, this.creditsBtn]) b.update(dt, pointer, this.isTouch);
 
     if (this.errorTimer > 0) {
       this.errorTimer -= dt;

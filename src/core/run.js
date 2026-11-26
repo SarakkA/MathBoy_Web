@@ -1,7 +1,8 @@
 // Dati della partita che passano da una stanza all'altra
 // (game_manager.py: default_data_* e load_data_for_next_level).
-import { HP_MAX, LIVES } from "../config/settings.js";
+import { HP_MAX, LIVES, PLAYER_SPEED, BULLET_SPEED } from "../config/settings.js";
 import { WORLDS } from "../config/worlds.js";
+import { SURVIVOR } from "../config/survivor.js";
 
 export function newRun(world = "Z", skin = 0) {
   const start = WORLDS[world].start;
@@ -22,6 +23,39 @@ export function newRun(world = "Z", skin = 0) {
     runTime: 0,         // s, somma delle stanze completate
     bulletsFired: 0,
     coinsSpawned: 0,
+  };
+}
+
+/** partita Survivor (survivor_state.py: data iniziale, applied_upgrades, livelli delle carte) */
+export function newSurvivorRun(skin = 0) {
+  const start = SURVIVOR.start;
+  return {
+    mode: "survivor",
+    world: null,
+    skin,
+    room: 0,
+    hp: HP_MAX,
+    hpMax: HP_MAX,
+    lives: start.lives,
+    score: 0,
+    values: [...start.values],
+    valueIndex: 0,
+    canAdd: start.canAdd,
+    canSub: start.canSub,
+    canMul: start.canMul,
+    canDiv: start.canDiv,
+    runTime: 0,
+    bulletsFired: 0,
+    coinsSpawned: 0,
+    kills: 0,
+    // potenziamenti delle carte
+    speed: PLAYER_SPEED,
+    bulletSpeed: BULLET_SPEED,
+    speedLevel: 0,
+    bulletSpeedLevel: 0,
+    potionLevel: { ice: 0, electric: 0, fire: 0 },  // livello delle carte pozione (0 = non presa)
+    potionTimer: { ice: 0, electric: 0, fire: 0 },  // s rimanenti di sparo speciale
+    takenOnce: [],                                  // carte una-tantum gia' prese
   };
 }
 

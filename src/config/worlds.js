@@ -110,7 +110,9 @@ export const WORLDS = {
 // riga "STORIA" del menu, nell'ordine del gioco desktop
 export const STORY_ROW = ["Z", "Q", "ZX", "QX", "EQ"].map((id) => ({ id, labelKey: WORLDS[id].labelKey }));
 
+// tutte le mappe da caricare all'avvio: campagna, Survivor (config/survivor.js) e menu
 export const ALL_MAPS = [
   ...new Set(Object.values(WORLDS).flatMap((w) => w.rooms.map((r) => r.map))),
+  "survivor_map",
   "menu_map",
 ];

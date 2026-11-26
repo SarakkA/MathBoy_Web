@@ -1,4 +1,9 @@
 {
+ "gold10": {
+  "lineHeight": 10,
+  "digitTop": 2,
+  "digitBottom": 9
+ },
  "gold12": {
   "lineHeight": 12,
   "digitTop": 2,

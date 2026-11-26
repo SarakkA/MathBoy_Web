@@ -9,7 +9,11 @@ Non c'è nessun build step e nessuna dipendenza da installare: sono moduli JavaS
   - Z e Q: numeri interi e frazioni, carica per × e ÷;
   - Z[x] e Q[x]: polinomi di primo grado da portare a "x";
   - Eqz: equazioni di primo grado da portare a "x = numero";
-- baule e dialoghi, armi che si sbloccano, monete, vite, statistiche e sblocco del mondo successivo.
+- baule e dialoghi, armi che si sbloccano, monete, vite, statistiche e sblocco del mondo successivo;
+- modalità **Survivor**: ondate infinite, boss-equazione con minion, carte potenziamento a ogni livello, pozioni ghiaccio / elettrico / fuoco;
+- pagina dei **crediti**.
+
+Per ora è tutto già sbloccato, per poter provare subito ogni modalità: `UNLOCK_EVERYTHING` in `src/core/profile.js` (rimettere a `false` per tornare alla progressione normale).
 
 Si gioca su https://sarakka.github.io/MathBoy_Web/.
 
@@ -26,18 +30,20 @@ Si gioca su https://sarakka.github.io/MathBoy_Web/.
 | F3 | mostra/nasconde FPS e renderer (WebGL/Canvas) |
 | R | continua (game over / fine mondo: si torna al menu) |
 | T tenuto premuto 2 s (menu) | sblocca tutti i mondi, come nel gioco desktop |
+| ESC (crediti) | torna al menu |
 
 **Da telefono (in orizzontale):**
 - **pollice sinistro:** joystick che compare dove appoggi il dito nella metà sinistra;
 - **pollice destro:** bottoni + e −, che sparano nella direzione in cui guarda il player (i puntini davanti al player indicano dove). Tenendoli premuti si carica × o ÷;
 - **bottone E:** compare vicino al baule;
-- **valore:** si cambia toccando la pallina del numero.
+- **valore:** si cambia toccando la pallina del numero;
+- **carte del Survivor:** si toccano la carta e poi "Conferma".
 
 I controlli touch compaiono al primo tocco e spariscono appena usi tastiera o mouse (`src/core/input.js`).
 
 **Lingua:** si cambia toccando la bandierina nel menu, oppure con `?lang=en` nell'indirizzo (anche `es`, `fr`, `de`).
 
-**Salvataggi:** nome, personaggio, mondi sbloccati e monete totali restano salvati nel browser (`src/core/profile.js`). Con `?unlock=all` nell'indirizzo si sbloccano tutti i mondi, comodo per i test.
+**Salvataggi:** nome, personaggio, mondi sbloccati, monete totali e livello record del Survivor restano salvati nel browser (`src/core/profile.js`). Con `?unlock=all` nell'indirizzo si sbloccano tutti i mondi, comodo per i test.
 
 ## Provarlo in locale
 
@@ -63,12 +69,13 @@ src/
   config/
     settings.js          costanti prese dal gioco Python (velocità, HP, danni, profondità)
     worlds.js            mondi e stanze: mappa, livello dei nemici, contenuto del baule
+    survivor.js          Survivor: ondate, carte potenziamento, pozioni
     skins.js             i tre personaggi: fogli, righe e frame delle animazioni
     webStrings.js        stringhe che esistono solo nella versione web
   core/
     input.js             input unico: tastiera+mouse o touch, la scena riceve solo le azioni
-    run.js               dati della partita che passano tra le stanze (HP, vite, armi, monete)
-    profile.js           profilo salvato nel browser: nome, personaggio, mondi sbloccati
+    run.js               dati della partita (HP, vite, armi, monete; nel Survivor anche i potenziamenti)
+    profile.js           profilo salvato nel browser: nome, personaggio, mondi sbloccati, record
     i18n.js              traduzioni: t("chiave")
     utils.js             collisioni, palline sfumate, testo con ombra
   math/                  motore algebrico, senza dipendenze da Phaser
@@ -80,11 +87,14 @@ src/
     BootScene.js         caricamento degli asset
     IntroScene.js        titolo, nome, scelta del personaggio
     MenuScene.js         menu principale
-    LevelScene.js        una stanza qualsiasi di un mondo
-    StatsScene.js        riepilogo di fine mondo
-  entities/              Player, Bullet, Coin, Chest, Door, enemies/MathEnemy (numero, polinomio o equazione)
+    BaseLevelScene.js    parte comune di ogni modalità su mappa: player, sparo, carica, proiettili, monete, danno
+    LevelScene.js        una stanza qualsiasi di un mondo (porta, baule, tutorial)
+    SurvivorScene.js     modalità Survivor
+    StatsScene.js        riepilogo di fine mondo o di fine Survivor
+    CreditsScene.js      crediti
+  entities/              Player, Bullet, Coin, Chest, Door, Potion, enemies/MathEnemy (numero, polinomio o equazione)
+  ui/                    Hud, DialogBox, TouchControls, UpgradeOverlay, mathText, menuBackground, weaponIcon, floatingReward
 tests/algebra.mjs        test del motore algebrico: node tests/algebra.mjs
-  ui/                    Hud, DialogBox, TouchControls, mathText, menuBackground, weaponIcon, floatingReward
 ```
 
 **Corrispondenza con il Python:**
@@ -92,12 +102,15 @@ tests/algebra.mjs        test del motore algebrico: node tests/algebra.mjs
 | Python | Web |
 |---|---|
 | `game_manager.py`: `data`, `treasure_config_*`, `levels_*` | `core/run.js`, `config/worlds.js` |
-| `level_base.py` + `level_Z.py` | `scenes/LevelScene.js` |
+| `level_base.py` | `scenes/BaseLevelScene.js` |
+| `level_Z.py` (e gli altri mondi) | `scenes/LevelScene.js` |
+| `survivor_state.py`, `upgrade_overlay.py`, `upgrade_speed.py`, `potion.py` | `scenes/SurvivorScene.js`, `config/survivor.js`, `ui/UpgradeOverlay.js`, `entities/Potion.js` |
+| `credits_state.py`, `utils/floaters.py` | `scenes/CreditsScene.js` |
 | `entities/*.py`, `ui/*.py` | `entities/`, `ui/` |
 | `utils/locales/*.py` | `assets/locales/*.json`, esportati in automatico |
 | `intro_state.py`, `menu_state.py`, `stats_state.py` | `scenes/IntroScene.js`, `MenuScene.js`, `StatsScene.js` |
 | `draw_utils.render_latex` (matplotlib) | `ui/mathText.js` |
-| `enemy_number.py`, `enemy_poly.py`, `enemy_equation2.py` | `entities/enemies/MathEnemy.js` + `math/` |
+| `enemy.py`, `enemy_number.py`, `enemy_poly.py`, `enemy_equation2.py`, `enemy_equation_super.py` | `entities/enemies/MathEnemy.js` + `math/` |
 
 I nomi dei file sono case-sensitive su GitHub Pages: un import scritto con maiuscole o minuscole sbagliate funziona in locale su Windows ma non online.
 
@@ -115,19 +128,18 @@ Il gioco desktop usa sympy per la matematica e LaTeX (matplotlib) per disegnare 
    - `apply(op, valore)` è il colpo: su un'equazione agisce su entrambi i lati, su un polinomio su tutta l'espressione;
    - `isSolved()` dice se il nemico è risolto (0, oppure "x", oppure "x = numero");
    - `toTokens()` restituisce i pezzi da impaginare.
-2. **Pezzi** (`tokens.js`): testo, frazione, segno, operatore. Seguono le convenzioni del LaTeX di sympy: rac{3x}{2} con la x nel numeratore, il meno davanti alla frazione, il termine noto dopo la x.
+2. **Pezzi** (`tokens.js`): testo, frazione, segno, operatore. Seguono le convenzioni del LaTeX di sympy: `\frac{3x}{2}` con la x nel numeratore, il meno davanti alla frazione, il termine noto dopo la x.
 3. **Disegno** (`ui/mathText.js`): mette i pezzi su una riga, tutti sullo stesso asse orizzontale. Le frazioni hanno cifre più piccole, impilate attorno a una barra di 1 px. Per allineare l'inchiostro delle cifre senza spazi vuoti usa `assets/fonts/metrics.json`, misurato dallo script di export.
 
 Il nemico (`MathEnemy`) non sa che formula ha: chiama solo queste tre funzioni. Per un tipo nuovo di formula (es. secondo grado, x su entrambi i lati) basta una classe con la stessa interfaccia.
 
 ## Roadmap (indicativa)
 
-1. ~~Mondo Z~~, ~~intro e menu~~, ~~Mondo Q~~, ~~Z[x], Q[x] ed Eqz con il motore algebrico~~.
+1. ~~Mondo Z~~, ~~intro e menu~~, ~~Mondo Q~~, ~~Z[x], Q[x] ed Eqz con il motore algebrico~~, ~~Survivor~~, ~~crediti~~.
 2. Musica (pesa: va scelto se e come caricarla senza rallentare l'avvio).
-3. Modalità extra (1 Minuto, Survivor, Parametrico), che usano gli stessi nemici-formula.
+3. Altre modalità extra (1 Minuto, Parametrico), che usano gli stessi nemici-formula.
 4. Statistiche complete (precisione, voto) e classifica online.
-5. Statistiche complete: precisione, voto, classifica online.
-6. Multiplayer: richiede un server WebSocket, perché il browser non può usare i socket TCP del server attuale.
+5. Multiplayer: richiede un server WebSocket, perché il browser non può usare i socket TCP del server attuale.
 
 ## Pubblicazione
 

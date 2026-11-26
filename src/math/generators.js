@@ -104,3 +104,64 @@ function equationLevel(level) {
     default: return new Equation(Linear.x(), 0);
   }
 }
+
+// --- Survivor (survivor_state.py): le formule dipendono dai proiettili posseduti ORA ---
+//   numeri:  enemy_number.py   generate_magic_equation
+//   boss:    enemy_equation.py generate_magic_equation
+
+/** k-esimo proiettile posseduto (0 = primo), o l'ultimo che c'e' */
+const nthValue = (values, k) => values[Math.min(k, values.length - 1)];
+const sign = () => pick([-1, 1]);
+
+export function survivorNumber(level, values) {
+  switch (level) {
+    case "pm1": return new Frac(pick([1, -1]));
+    case "pm2": return new Frac(pick([2, -2]));
+    case "pm3": return new Frac(pick([3, -3]));
+    case "pm4": return new Frac(pick([4, -4]));
+    case "pm5": return new Frac(pick([5, -5]));
+    case "pm6": return new Frac(pick([6, -6]));
+    case "pm_large": return new Frac(pick([50, -50]));
+    case "pm_large2": return new Frac(pick([100, -100]));
+    case "pm_division":
+      return new Frac(pick([50, 64, 81, 100, 144, 128, 125, -50, -64, -81, -100, -144, -128, -125]));
+    case "pm_random_value": return new Frac(sign() * pick(values));
+    case "pm_random_value_diff": return new Frac(sign() * pick(values) * pick([2, 3]));
+    case "pm_random_value_diff_2": return new Frac(sign() * pick(values) * pick([4, 5]));
+    case "pm_second_weapon": return new Frac(sign() * nthValue(values, 1));
+    case "pm_third_weapon": return new Frac(sign() * nthValue(values, 2));
+    case "pm_fourth_weapon": return new Frac(sign() * nthValue(values, 3));
+    case "p_second_weapon_rational": return new Frac(1, nthValue(values, 1));
+    case "pm_third_weapon_rational": return new Frac(1, nthValue(values, 2));
+    case "pm_mixed_weapon_rational": {
+      // 1/(a·b), 1/a² o 1/b² con a, b tra il secondo, terzo e quarto proiettile
+      let den;
+      if (values.length >= 3) {
+        const pool = values.length >= 4 ? [values[1], values[2], values[3]] : [values[1], values[2]];
+        const a = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+        const b = pick(pool);
+        den = pick([a * b, a * a, b * b]);
+      } else if (values.length >= 2) {
+        den = pick([values[1] ** 2, values[1]]);
+      } else {
+        den = pick([1, -1]);
+      }
+      return new Frac(sign(), den);
+    }
+    default: return new Frac(42);
+  }
+}
+
+export function survivorEquation(level, values) {
+  switch (level) {
+    case "pm_random_value": return new Equation(xPlus(-pick(values)), 0);            // x - a = 0
+    case "pm_2_3_5": return new Equation(xPlus(-pick([2, 3, 5, -2, -3, -5])), 0);
+    case "equazione": {
+      const a = pick([2, 3, 5]);
+      const b = pick([2, -2, 3, -3, 5, -5, 4, -4, 6, -6, 9, -9, 10, -10, 12, -12]);
+      if (Math.random() < 0.5) return new Equation(new Linear(a, b), 0);           // a·x + b = 0
+      return new Equation(new Linear(new Frac(1, a), b), 0);                      // x/a + b = 0
+    }
+    default: return new Equation(Linear.x(), 0);
+  }
+}

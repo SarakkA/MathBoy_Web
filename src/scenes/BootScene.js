@@ -30,10 +30,11 @@ export default class BootScene extends Phaser.Scene {
     sheet("chest", "chest.png", 16);
     sheet("keys", "keyboard_letters.png", 16);
     sheet("mouse", "mouse_input.png", 16);
+    sheet("upgrade_icons", "upgrade_icons.png", 16); // carte e pozioni del Survivor
     this.load.image("heart", "assets/sprites/heart.png");
     this.load.image("shadow", "assets/sprites/shadow.png");
     for (const lang of ["it", "en", "es", "fr", "de"]) this.load.image(`flag_${lang}`, `assets/sprites/flag_${lang}.png`);
-    for (const size of [12, 16, 24, 32, 48]) {
+    for (const size of [10, 12, 16, 24, 32, 48]) {
       this.load.bitmapFont(`gold${size}`, `assets/fonts/gold${size}.png`, `assets/fonts/gold${size}.xml`);
     }
     this.load.json("font_metrics", "assets/fonts/metrics.json");

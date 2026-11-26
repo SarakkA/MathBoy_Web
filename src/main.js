@@ -4,6 +4,8 @@ import IntroScene from "./scenes/IntroScene.js";
 import MenuScene from "./scenes/MenuScene.js";
 import LevelScene from "./scenes/LevelScene.js";
 import StatsScene from "./scenes/StatsScene.js";
+import SurvivorScene from "./scenes/SurvivorScene.js";
+import CreditsScene from "./scenes/CreditsScene.js";
 
 // Superficie logica 640x360 come il desktop, scalata per riempire la finestra.
 // AUTO = WebGL, con ripiego automatico su Canvas 2D se WebGL e' disattivato.
@@ -25,5 +27,5 @@ window.game = new Phaser.Game({
     mouse: { preventDefaultWheel: true },
     activePointers: 3, // multitocco: joystick + bottone insieme
   },
-  scene: [BootScene, IntroScene, MenuScene, LevelScene, StatsScene],
+  scene: [BootScene, IntroScene, MenuScene, LevelScene, SurvivorScene, StatsScene, CreditsScene],
 });
