@@ -48,7 +48,10 @@ export default class TouchControls {
         return i === 0 ? "add" : "sub";
       }
     }
-    if (this.showE && near(E_BUTTON.x, E_BUTTON.y, E_BUTTON.r + 8)) return "interact";
+    if (this.showE && near(E_BUTTON.x, E_BUTTON.y, E_BUTTON.r + 8)) {
+      this.ePointer = p.id; // per il rilascio (coop: E si tiene premuto per rianimare)
+      return "interact";
+    }
     for (const s of this.hud.selectorPositions()) {
       if (near(s.x, s.y, 16)) return "value";
     }
@@ -78,6 +81,10 @@ export default class TouchControls {
 
   /** ritorna "add" | "sub" se e' stato rilasciato un bottone di sparo (per la carica) */
   up(p) {
+    if (p.id === this.ePointer) {
+      this.ePointer = null;
+      return "interact_up";
+    }
     if (p.id === this.joyId) this.releaseJoystick();
     if (!this.buttonPointers.has(p.id)) return null;
     const i = this.buttonPointers.get(p.id);

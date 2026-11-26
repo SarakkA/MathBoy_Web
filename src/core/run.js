@@ -83,6 +83,30 @@ export function newParametricRun(skin = 0) {
   };
 }
 
+/** partita online (game_manager.py data_DEV): proiettili 1, 2, 3, 5 e tutte le operazioni.
+ *  In coop il ruolo toglie meta' delle armi: "add_mul" solo + e ×, "sub_div" solo - e ÷. */
+export function newNetRun(skin = 0, role = "all") {
+  return {
+    mode: "online",
+    world: null,
+    skin,
+    room: 0,
+    hp: HP_MAX,
+    hpMax: HP_MAX,
+    lives: 0,            // niente cuori nell'HUD
+    score: 0,
+    values: [1, 2, 3, 5],
+    valueIndex: 0,
+    canAdd: role !== "sub_div",
+    canSub: role !== "add_mul",
+    canMul: role !== "sub_div",
+    canDiv: role !== "add_mul",
+    runTime: 0,
+    bulletsFired: 0,
+    coinsSpawned: 0,
+  };
+}
+
 export function selectedValue(run) {
   return run.values[run.valueIndex];
 }

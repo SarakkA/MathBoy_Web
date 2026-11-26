@@ -25,8 +25,9 @@ export default class BaseLevelScene extends Phaser.Scene {
     return L;
   }
 
-  /** player, effetti, camera, suoni, HUD e input. handlers: callback extra per InputController */
-  createCommon(L, { titleKey = null, handlers = {} } = {}) {
+  /** player, effetti, camera, suoni, HUD e input. handlers: callback extra per InputController;
+   *  hud: opzioni extra per Hud (es. { coins: false }) */
+  createCommon(L, { titleKey = null, handlers = {}, hud = {} } = {}) {
     const run = this.run;
     this.player = new Player(this, L.player.x, L.player.y, run.skin);
     this.enemies = [];
@@ -54,7 +55,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.popSound = this.sound.add("pop_sfx", { volume: 0.35 });
     this.coinSound = this.sound.add("coin_sfx", { volume: 0.25 });
 
-    this.hud = new Hud(this, run, { titleKey, playerName: getProfile().name });
+    this.hud = new Hud(this, run, { titleKey, playerName: getProfile().name, ...hud });
     this.aimDots = this.add.graphics().setDepth(DEPTH.worldFx - 40); // mira in modalita' touch
 
     // input: tastiera+mouse o touch, la scena riceve solo le azioni (core/input.js)

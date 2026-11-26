@@ -21,6 +21,7 @@ export default class InputController {
 
     this.keys = scene.input.keyboard.addKeys("W,A,S,D,E,R,F3");
     this.keys.E.on("down", () => this.h.onInteract());
+    this.keys.E.on("up", () => this.h.onInteractRelease?.());
     this.keys.R.on("down", () => { if (this.h.canRestart()) this.h.onRestart(); });
     this.keys.F3.on("down", () => this.h.onToggleFps());
     scene.input.keyboard.on("keydown", () => this.setMode("desktop"));
@@ -74,7 +75,8 @@ export default class InputController {
   onUp(p) {
     if (p.wasTouch) {
       const released = this.touch.up(p);
-      if (released) this.h.onFireRelease(released);
+      if (released === "interact_up") this.h.onInteractRelease?.();
+      else if (released) this.h.onFireRelease(released);
       this.tryFullscreen();
     } else {
       this.hud.notifyRelease(p.button);

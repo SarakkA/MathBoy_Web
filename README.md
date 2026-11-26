@@ -12,6 +12,7 @@ Non c'è nessun build step e nessuna dipendenza da installare: sono moduli JavaS
 - baule e dialoghi, armi che si sbloccano, monete, vite, statistiche e sblocco del mondo successivo;
 - modalità **Survivor**: ondate infinite, boss-equazione con minion, carte potenziamento a ogni livello, pozioni ghiaccio / elettrico / fuoco;
 - modalità **Parametrico**: equazioni con i parametri a e b che cadono dall'alto, munizioni a, b, −1, 2; si perde una vita se toccano la striscia rossa;
+- **multiplayer online**, Sfida (versus) e Coop, sullo stesso server del gioco desktop: chi gioca dal browser e chi dal .exe finiscono nelle stesse partite;
 - pagina dei **crediti**.
 
 Per ora è tutto già sbloccato, per poter provare subito ogni modalità: `UNLOCK_EVERYTHING` in `src/core/profile.js` (rimettere a `false` per tornare alla progressione normale).
@@ -31,7 +32,8 @@ Si gioca su https://sarakka.github.io/MathBoy_Web/.
 | F3 | mostra/nasconde FPS e renderer (WebGL/Canvas) |
 | R | continua (game over / fine mondo: si torna al menu) |
 | T tenuto premuto 2 s (menu) | sblocca tutti i mondi, come nel gioco desktop |
-| ESC (crediti) | torna al menu |
+| ESC (crediti, coda online) | torna al menu |
+| E tenuto premuto (coop) | rianima il compagno a terra |
 
 **Da telefono (in orizzontale):**
 - **pollice sinistro:** joystick che compare dove appoggi il dito nella metà sinistra;
@@ -45,6 +47,27 @@ I controlli touch compaiono al primo tocco e spariscono appena usi tastiera o mo
 **Lingua:** si cambia toccando la bandierina nel menu, oppure con `?lang=en` nell'indirizzo (anche `es`, `fr`, `de`).
 
 **Salvataggi:** nome, personaggio, mondi sbloccati, monete totali e livello record del Survivor restano salvati nel browser (`src/core/profile.js`). Con `?unlock=all` nell'indirizzo si sbloccano tutti i mondi, comodo per i test.
+
+## Multiplayer online
+
+Il server è quello del gioco desktop (`server_online.py`, nel progetto Python), che gira sulla VPS e decide tutto: posizioni, colpi, soluzioni, morti. Il browser non può aprire connessioni TCP, quindi sulla VPS c'è un piccolo ponte WebSocket (`ws_bridge.py`) con Caddy davanti per l'https:
+
+```
+browser --wss://mathboy.duckdns.org/ws--> Caddy --> ws_bridge.py --tcp--> server_online.py <--tcp-- .exe
+```
+
+- L'indirizzo è in `src/net/connection.js` (`ONLINE_SERVER_URL`); per provare in locale si aggiunge `?server=ws://localhost:8770` all'indirizzo del gioco.
+- Le istruzioni per la VPS (ponte, Caddy, DuckDNS, protezioni) stanno nel progetto Python: `tools/DEPLOY_ONLINE.md`.
+- Le formule arrivano dal server come testo sympy (`Eq(x + 10, 0)`) e le legge `src/math/sympyParse.js`, un parser scritto a mano: niente `eval` su testo che arriva dalla rete. `tests/sympyParse.mjs` lo verifica su 400 formule generate dal server.
+
+Per provarlo tutto in locale (nella cartella `src/network` del progetto Python):
+
+```
+python server_online.py --duration 60
+python ws_bridge.py
+```
+
+poi due finestre del browser su `http://localhost:8765/?server=ws://localhost:8770`, menu → MultiPlayer.
 
 ## Provarlo in locale
 
@@ -77,6 +100,8 @@ src/
     input.js             input unico: tastiera+mouse o touch, la scena riceve solo le azioni
     run.js               dati della partita (HP, vite, armi, monete; nel Survivor anche i potenziamenti)
     profile.js           profilo salvato nel browser: nome, personaggio, mondi sbloccati, record
+  net/
+    connection.js        connessione WebSocket al server online, coda dei messaggi, ping
     i18n.js              traduzioni: t("chiave")
     utils.js             collisioni, palline sfumate, testo con ombra
   math/                  motore algebrico, senza dipendenze da Phaser
@@ -85,6 +110,7 @@ src/
     tokens.js            da espressione a pezzi da impaginare (convenzioni del LaTeX di sympy)
     generators.js        formule dei nemici per tipo e livello
     symbolic.js          Parametrico: equazioni con a e b (forma iniziale come sympy, poi cancel)
+    sympyParse.js        legge le formule che manda il server online
   scenes/
     BootScene.js         caricamento degli asset
     IntroScene.js        titolo, nome, scelta del personaggio
@@ -93,12 +119,17 @@ src/
     LevelScene.js        una stanza qualsiasi di un mondo (porta, baule, tutorial)
     SurvivorScene.js     modalità Survivor
     ParametricScene.js   modalità Parametrico
+    OnlineLobbyScene.js  coda online: connessione, nomi, attesa degli altri giocatori
+    NetMatchScene.js     parte comune delle partite online (predizione, snapshot, proiettili, timer)
+    VersusScene.js       Sfida online: equazione sopra ogni giocatore, forzieri, power-up
+    CoopScene.js         Coop online: ondate condivise, ruoli + × / − ÷, rianimazione
     StatsScene.js        riepilogo di fine mondo o di fine Survivor
     CreditsScene.js      crediti
   entities/              Player, Bullet, Coin, Chest, Door, Potion, enemies/MathEnemy (numero, polinomio o equazione)
   ui/                    Hud, DialogBox, TouchControls, UpgradeOverlay, mathText, menuBackground, weaponIcon, floatingReward
 tests/algebra.mjs        test del motore algebrico: node tests/algebra.mjs
 tests/parametric.mjs     test del Parametrico contro 120 casi calcolati con sympy: node tests/parametric.mjs
+tests/sympyParse.mjs     test del parser delle formule del server online: node tests/sympyParse.mjs
 ```
 
 **Corrispondenza con il Python:**
@@ -111,6 +142,9 @@ tests/parametric.mjs     test del Parametrico contro 120 casi calcolati con symp
 | `survivor_state.py`, `upgrade_overlay.py`, `upgrade_speed.py`, `potion.py` | `scenes/SurvivorScene.js`, `config/survivor.js`, `ui/UpgradeOverlay.js`, `entities/Potion.js` |
 | `credits_state.py`, `utils/floaters.py` | `scenes/CreditsScene.js` |
 | `letterale_state.py`, `enemy_parametric.py` | `scenes/ParametricScene.js`, `math/symbolic.js` |
+| `online_state.py`, `lobby_state.py` | `scenes/OnlineLobbyScene.js`, `net/connection.js` |
+| `multiplayer_state3.py`, `enemy_1v1.py`, `versus_chest.py` | `scenes/NetMatchScene.js`, `scenes/VersusScene.js` |
+| `multiplayer_coop_state.py` | `scenes/CoopScene.js` |
 | `entities/*.py`, `ui/*.py` | `entities/`, `ui/` |
 | `utils/locales/*.py` | `assets/locales/*.json`, esportati in automatico |
 | `intro_state.py`, `menu_state.py`, `stats_state.py` | `scenes/IntroScene.js`, `MenuScene.js`, `StatsScene.js` |
@@ -142,11 +176,11 @@ Il nemico (`MathEnemy`) non sa che formula ha: chiama solo queste tre funzioni. 
 
 ## Roadmap (indicativa)
 
-1. ~~Mondo Z~~, ~~intro e menu~~, ~~Mondo Q~~, ~~Z[x], Q[x] ed Eqz con il motore algebrico~~, ~~Survivor~~, ~~crediti~~, ~~Parametrico~~.
+1. ~~Mondo Z~~, ~~intro e menu~~, ~~Mondo Q~~, ~~Z[x], Q[x] ed Eqz con il motore algebrico~~, ~~Survivor~~, ~~crediti~~, ~~Parametrico~~, ~~multiplayer online~~.
 2. Musica (pesa: va scelto se e come caricarla senza rallentare l'avvio).
 3. Modalità 1 Minuto, che usa gli stessi nemici-formula.
 4. Statistiche complete (precisione, voto) e classifica online.
-5. Multiplayer: richiede un server WebSocket, perché il browser non può usare i socket TCP del server attuale.
+5. Classifica online: solo dopo aver ristretto le regole di Firestore (`tools/firestore.rules` nel progetto Python).
 
 ## Pubblicazione
 

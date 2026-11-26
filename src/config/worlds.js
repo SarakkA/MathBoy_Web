@@ -115,5 +115,6 @@ export const ALL_MAPS = [
   ...new Set(Object.values(WORLDS).flatMap((w) => w.rooms.map((r) => r.map))),
   "survivor_map",
   "Letterale_map",   // Parametrico
+  "multiplayer_map", // versus e coop online
   "menu_map",
 ];

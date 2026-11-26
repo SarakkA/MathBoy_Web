@@ -13,6 +13,10 @@ export const WEB_STRINGS = {
     "web.confirm": "OK",
     "web.coming_soon": "Presto anche sul web",
     "web.tap_start": "Tocca per iniziare",
+    "web.back": "Indietro",
+    "web.net_lost": "Connessione persa",
+    "web.server_off": "Il server online e' spento o non raggiungibile",
+    "web.opponent_left": "L'avversario ha lasciato la partita",
   },
   en: {
     "web.restart": "Press R to play again",
@@ -26,5 +30,9 @@ export const WEB_STRINGS = {
     "web.confirm": "OK",
     "web.coming_soon": "Coming soon on the web",
     "web.tap_start": "Tap to start",
+    "web.back": "Back",
+    "web.net_lost": "Connection lost",
+    "web.server_off": "The online server is off or unreachable",
+    "web.opponent_left": "Your opponent left the match",
   },
 };

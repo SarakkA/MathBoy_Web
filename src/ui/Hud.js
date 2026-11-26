@@ -11,7 +11,8 @@ const CHARGE_RADIUS = 14; // charge_circle.py, attorno ai bottoni +/-
 /** HUD a schermo fisso (hud.py + cuori + titolo del capitolo + contatore FPS + cursore).
  *  Legge tutto dalla run, cosi' resta allineato quando un baule sblocca qualcosa. */
 export default class Hud {
-  constructor(scene, run, { titleKey = null, playerName = "" } = {}) {
+  /** coins: false nasconde le monete (multiplayer); le vite si nascondono con run.lives = 0 */
+  constructor(scene, run, { titleKey = null, playerName = "", coins = true } = {}) {
     this.scene = scene;
     this.run = run;
     const fixed = (o) => o.setScrollFactor(0).setDepth(DEPTH.hud);
@@ -27,8 +28,9 @@ export default class Hud {
     }
 
     // monete
-    fixed(scene.add.image(11, 50, "coin", 0).setOrigin(0, 0.5));
+    fixed(scene.add.image(11, 50, "coin", 0).setOrigin(0, 0.5)).setVisible(coins);
     this.score = shadowText(scene, 28, 50, "gold12", ": 0").setOrigin(0, 0.5).setScrollFactor(0).setDepth(DEPTH.hud);
+    if (!coins) this.score.setAlpha(0);
 
     // selettore valori (colonna a destra), ricostruito se cambiano i valori
     this.selector = [];

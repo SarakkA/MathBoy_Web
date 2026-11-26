@@ -16,11 +16,13 @@ const START_Y = H / 2;
 const EXTRA_ROW = [
   { label: "menu.btn.one_minute", scene: null },
   { label: "Survivor", scene: "Survivor" },
-  { label: "MultiPlayer", scene: null },
+  { label: "MultiPlayer", scene: "MP" },     // apre la scelta Sfida / Coop online
   { label: "menu.btn.literal", scene: "Parametric" },
   { label: "menu.btn.leaderboards", scene: null },
 ];
 // personaggio in alto a sinistra che guarda il mouse (menu_state.py animate_skin)
+// multiplayer online: la coop si spegne qui se serve
+const COOP_READY = true;
 const DIRS = ["idle_left_up", "idle_up", "idle_right_up", "idle_right", "idle_down", "idle_left"];
 
 /** Menu principale (menu_state.py): riga STORIA con i mondi, riga EXTRA con le modalita'
@@ -108,6 +110,12 @@ export default class MenuScene extends Phaser.Scene {
     this.isTouch = p.wasTouch;
     this.registry.set("inputMode", p.wasTouch ? "touch" : "desktop");
     if (this.leaving) return;
+    if (this.mpPanel) {
+      const b = this.mpPanel.buttons.find((x) => x.contains(p.x, p.y));
+      if (b && b.active) b.onClick();
+      else if (b) this.showError(t("web.coming_soon"));
+      return;
+    }
     if (this.flagRect.contains(p.x, p.y)) {
       const next = LANGS[(LANGS.indexOf(getLanguage()) + 1) % LANGS.length];
       setLanguage(next);
@@ -146,7 +154,33 @@ export default class MenuScene extends Phaser.Scene {
   }
 
   startMode(scene) {
-    this.goTo(scene);
+    if (scene === "MP") this.openMpPanel();
+    else this.goTo(scene);
+  }
+
+  /** riquadro di scelta del multiplayer online (menu_state.py: Online Sfida / Online Coop) */
+  openMpPanel() {
+    this.blip.play();
+    const D = 1800;
+    const bg = this.add.rectangle(0, 0, W, H, 0x000000, 0.6).setOrigin(0).setDepth(D);
+    const box = this.add.rectangle(W / 2, H / 2 + 10, 300, 170, 0x1e1e37, 0.95).setStrokeStyle(2, 0xd2d2e6).setDepth(D);
+    const title = this.add.bitmapText(W / 2, H / 2 - 52, "gold16", "MultiPlayer").setOrigin(0.5).setDepth(D + 1);
+    const close = () => {
+      [bg, box, title].forEach((o) => o.destroy());
+      this.mpPanel.buttons.forEach((b) => b.destroy());
+      this.mpPanel = null;
+    };
+    const buttons = [
+      new MenuButton(this, W / 2 - 130, H / 2 - 20, 120, 34, t("menu.btn.online_versus"), {
+        onClick: () => this.goTo("OnlineLobby", { mode: "pvp" }),
+      }),
+      new MenuButton(this, W / 2 + 10, H / 2 - 20, 120, 34, t("menu.btn.online_coop"), {
+        active: COOP_READY, onClick: () => this.goTo("OnlineLobby", { mode: "coop" }),
+      }),
+      new MenuButton(this, W / 2 - 50, H / 2 + 40, 100, 30, t("web.back"), { onClick: () => { this.blip.play(); close(); } }),
+    ];
+    buttons.forEach((b) => b.setDepth(D + 2));
+    this.mpPanel = { buttons, close };
   }
 
   /** dissolvenza e cambio scena */
@@ -162,7 +196,8 @@ export default class MenuScene extends Phaser.Scene {
     const dt = Math.min(delta / 1000, 0.05);
     this.bg.update(dt);
     const pointer = this.input.activePointer;
-    for (const b of [...this.buttons, ...this.extras, this.creditsBtn]) b.update(dt, pointer, this.isTouch);
+    for (const b of [...this.buttons, ...this.extras, this.creditsBtn]) b.update(dt, pointer, this.isTouch && !this.mpPanel);
+    if (this.mpPanel) this.mpPanel.buttons.forEach((b) => b.update(dt, pointer, this.isTouch));
 
     if (this.errorTimer > 0) {
       this.errorTimer -= dt;

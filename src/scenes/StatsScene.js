@@ -18,7 +18,9 @@ export function formatDuration(seconds) {
  *  precisione e classifica online per ora).
  *  Campagna: { run }  -> sblocca il mondo successivo.
  *  Survivor: { mode: "survivor", score, runTime, level, kills } -> salva il record.
- *  Parametrico: { mode: "parametric", score, runTime } -> salva il record. */
+ *  Parametrico: { mode: "parametric", score, runTime } -> salva il record.
+ *  Versus online: { mode: "versus", rank: [{ name, deaths }] } (classifica per morti).
+ *  Coop online: { mode: "coop", teamKills, wipes }. */
 export default class StatsScene extends Phaser.Scene {
   constructor() {
     super("Stats");
@@ -46,6 +48,12 @@ export default class StatsScene extends Phaser.Scene {
         t("stats.level_reached", { v: d.level }),
         t("stats.time", { v: formatDuration(d.runTime) }),
       ];
+    } else if (d.mode === "versus") {
+      title = t("stats.arena_over");
+      lines = (d.rank || []).map((p, i) => `${i + 1}. ${p.name} - ${p.deaths}`);
+    } else if (d.mode === "coop") {
+      title = t("stats.coop_over");
+      lines = [t("stats.team_kills", { v: d.teamKills ?? 0 }), t("stats.team_wipes", { v: d.wipes ?? 0 })];
     } else if (d.mode === "parametric") {
       addParametricResult(d.score);
       title = t("stats.game_over");

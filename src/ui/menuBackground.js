@@ -63,6 +63,15 @@ export class MenuButton {
     return Phaser.Geom.Rectangle.Contains(this.rect, px, py);
   }
 
+  setDepth(d) {
+    [this.shadow, this.face, this.textShadow, this.text].forEach((o, i) => o.setDepth(d + i * 0.01));
+    return this;
+  }
+
+  destroy() {
+    [this.shadow, this.face, this.textShadow, this.text].forEach((o) => o.destroy());
+  }
+
   update(dt, pointer, isTouch) {
     this.hover = this.active && !isTouch && this.contains(pointer.x, pointer.y);
     const target = this.hover ? 2 : 0;
