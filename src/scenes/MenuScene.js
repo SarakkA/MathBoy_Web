@@ -55,7 +55,7 @@ export default class MenuScene extends Phaser.Scene {
     const x0 = rowX(STORY_ROW.length);
     const lines = this.add.graphics();
     this.buttons = STORY_ROW.map((w, i) => {
-      const playable = Boolean(WORLDS[w.id]) && isUnlocked(w.id);
+      const playable = isUnlocked(w.id);
       const btn = new MenuButton(this, x0 + i * (BTN_W + SPACING_X), START_Y, BTN_W, BTN_H, t(w.labelKey), {
         active: playable,
         onClick: () => this.startWorld(w.id),

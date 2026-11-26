@@ -3,7 +3,10 @@ import { WORLDS } from "../config/worlds.js";
 import { t } from "../core/i18n.js";
 import { completeWorld } from "../core/profile.js";
 
-const WORLD_LABELS = { Q: "menu.btn.world_q", ZX: "menu.btn.world_zx", QX: "menu.btn.world_qx", EQ: "menu.btn.world_eq" };
+const WORLD_LABELS = {
+  Q: "menu.btn.world_q", ZX: "menu.btn.world_zx", QX: "menu.btn.world_qx", EQ: "menu.btn.world_eq",
+  EXTRA: "stats.extra_modes",
+};
 
 /** Riepilogo a fine mondo (stats_state.py, in versione ridotta: niente voto,
  *  precisione e classifica online per ora). Sblocca il mondo successivo e torna al menu. */

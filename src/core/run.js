@@ -17,8 +17,8 @@ export function newRun(world = "Z", skin = 0) {
     valueIndex: 0,
     canAdd: start.canAdd, // armi, sbloccate dai bauli
     canSub: start.canSub,
-    canMul: false,
-    canDiv: false,
+    canMul: Boolean(start.canMul),
+    canDiv: Boolean(start.canDiv),
     runTime: 0,         // s, somma delle stanze completate
     bulletsFired: 0,
     coinsSpawned: 0,

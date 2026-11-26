@@ -5,7 +5,10 @@ Non c'è nessun build step e nessuna dipendenza da installare: sono moduli JavaS
 
 **Stato attuale:**
 - intro con nome e scelta tra i tre personaggi, poi il menu principale;
-- Mondo Z completo (3 stanze) e Mondo Q completo (3 stanze, con frazioni e carica per × e ÷);
+- tutti e cinque i mondi della storia, 3 stanze ciascuno:
+  - Z e Q: numeri interi e frazioni, carica per × e ÷;
+  - Z[x] e Q[x]: polinomi di primo grado da portare a "x";
+  - Eqz: equazioni di primo grado da portare a "x = numero";
 - baule e dialoghi, armi che si sbloccano, monete, vite, statistiche e sblocco del mondo successivo.
 
 Si gioca su https://sarakka.github.io/MathBoy_Web/.
@@ -68,16 +71,19 @@ src/
     profile.js           profilo salvato nel browser: nome, personaggio, mondi sbloccati
     i18n.js              traduzioni: t("chiave")
     utils.js             collisioni, palline sfumate, testo con ombra
-  math/
+  math/                  motore algebrico, senza dipendenze da Phaser
     fraction.js          frazioni esatte (al posto di sympy.Rational)
-    equations.js         generazione dei nemici per livello
+    linear.js            espressioni a·x + b ed equazioni di primo grado
+    tokens.js            da espressione a pezzi da impaginare (convenzioni del LaTeX di sympy)
+    generators.js        formule dei nemici per tipo e livello
   scenes/
     BootScene.js         caricamento degli asset
     IntroScene.js        titolo, nome, scelta del personaggio
     MenuScene.js         menu principale
     LevelScene.js        una stanza qualsiasi di un mondo
     StatsScene.js        riepilogo di fine mondo
-  entities/              Player, Bullet, Coin, Chest, Door, enemies/
+  entities/              Player, Bullet, Coin, Chest, Door, enemies/MathEnemy (numero, polinomio o equazione)
+tests/algebra.mjs        test del motore algebrico: node tests/algebra.mjs
   ui/                    Hud, DialogBox, TouchControls, mathText, menuBackground, weaponIcon, floatingReward
 ```
 
@@ -91,6 +97,7 @@ src/
 | `utils/locales/*.py` | `assets/locales/*.json`, esportati in automatico |
 | `intro_state.py`, `menu_state.py`, `stats_state.py` | `scenes/IntroScene.js`, `MenuScene.js`, `StatsScene.js` |
 | `draw_utils.render_latex` (matplotlib) | `ui/mathText.js` |
+| `enemy_number.py`, `enemy_poly.py`, `enemy_equation2.py` | `entities/enemies/MathEnemy.js` + `math/` |
 
 I nomi dei file sono case-sensitive su GitHub Pages: un import scritto con maiuscole o minuscole sbagliate funziona in locale su Windows ma non online.
 
@@ -98,24 +105,27 @@ I nomi dei file sono case-sensitive su GitHub Pages: un import scritto con maius
 
 1. Nel progetto Python, aggiungi la mappa a `MAPS` in `tools/export_level_web.py` e lancia `python tools/export_level_web.py`.
 2. Aggiungi la stanza in `src/config/worlds.js`.
-3. Se i nemici sono di un tipo nuovo, aggiungi il livello in `src/math/equations.js` o una classe in `src/entities/enemies/`.
+3. Se i nemici sono di un tipo nuovo, aggiungi il livello in `src/math/generators.js`.
 
-## Come sono disegnate le frazioni
+## Motore algebrico e formule
 
-Il gioco desktop disegna i nemici con LaTeX tramite matplotlib, troppo pesante per il browser. Qui c'è `ui/mathText.js`, che compone la formula con i font bitmap:
-- **intero:** una riga, centrata sull'inchiostro delle cifre;
-- **frazione:** numeratore e denominatore con il font più piccolo, impilati attorno a una barra di 1 px, con il segno meno davanti, come il `rac` di LaTeX.
+Il gioco desktop usa sympy per la matematica e LaTeX (matplotlib) per disegnare i nemici: troppo pesanti per il browser. Qui il lavoro è diviso in tre strati:
 
-Per impilare senza spazi vuoti serve sapere dove sta davvero l'inchiostro delle cifre dentro ogni font. Lo script di export lo misura e lo salva in `assets/fonts/metrics.json`.
+1. **Calcolo** (`src/math/`): `Frac` per le frazioni esatte, `Linear` per a·x + b, `Equation` per due lati lineari. Hanno tutte la stessa interfaccia:
+   - `apply(op, valore)` è il colpo: su un'equazione agisce su entrambi i lati, su un polinomio su tutta l'espressione;
+   - `isSolved()` dice se il nemico è risolto (0, oppure "x", oppure "x = numero");
+   - `toTokens()` restituisce i pezzi da impaginare.
+2. **Pezzi** (`tokens.js`): testo, frazione, segno, operatore. Seguono le convenzioni del LaTeX di sympy: rac{3x}{2} con la x nel numeratore, il meno davanti alla frazione, il termine noto dopo la x.
+3. **Disegno** (`ui/mathText.js`): mette i pezzi su una riga, tutti sullo stesso asse orizzontale. Le frazioni hanno cifre più piccole, impilate attorno a una barra di 1 px. Per allineare l'inchiostro delle cifre senza spazi vuoti usa `assets/fonts/metrics.json`, misurato dallo script di export.
 
-Per le equazioni dei mondi successivi (es. `2x + 3/4 = 1`) basterà mettere in fila gli stessi pezzi: numeri, frazioni, simboli ed eventuali esponenti.
+Il nemico (`MathEnemy`) non sa che formula ha: chiama solo queste tre funzioni. Per un tipo nuovo di formula (es. secondo grado, x su entrambi i lati) basta una classe con la stessa interfaccia.
 
 ## Roadmap (indicativa)
 
-1. ~~Mondo Z~~, ~~intro e menu~~, ~~Mondo Q con frazioni e carica~~.
+1. ~~Mondo Z~~, ~~intro e menu~~, ~~Mondo Q~~, ~~Z[x], Q[x] ed Eqz con il motore algebrico~~.
 2. Musica (pesa: va scelto se e come caricarla senza rallentare l'avvio).
-3. Mondi con equazioni e polinomi (Z[x], Q[x], EQ): `mathText` diventa un piccolo impaginatore di formule.
-4. Modalità extra (1 Minuto, Survivor, Parametrico).
+3. Modalità extra (1 Minuto, Survivor, Parametrico), che usano gli stessi nemici-formula.
+4. Statistiche complete (precisione, voto) e classifica online.
 5. Statistiche complete: precisione, voto, classifica online.
 6. Multiplayer: richiede un server WebSocket, perché il browser non può usare i socket TCP del server attuale.
 

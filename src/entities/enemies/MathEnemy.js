@@ -1,15 +1,18 @@
-import { ENEMY_SOLVE_DELAY, DEPTH, Op } from "../../config/settings.js";
+import { DEPTH } from "../../config/settings.js";
 import MathText from "../../ui/mathText.js";
 
-/** Nemico-numero da portare a 0 (enemy_number.py): intero o frazione (Frac).
- *  Il valore iniziale arriva da generateEquation (math/equations.js). Il desktop lo
- *  disegna in LaTeX con matplotlib; qui lo disegna MathText. */
-export default class EnemyNumber {
-  constructor(scene, x, y, value) {
+/** Nemico-formula: un numero (Frac), un polinomio (Linear) o un'equazione (Equation).
+ *  Ogni proiettile trasforma la formula con expr.apply(op, valore); il nemico e' risolto
+ *  quando expr.isSolved() (enemy_number.py, enemy_poly.py, enemy_equation2.py).
+ *  Il desktop disegna la formula in LaTeX con matplotlib; qui la impagina MathText. */
+export default class MathEnemy {
+  /** solveDelay: secondi tra la soluzione e la sparizione (1 per i numeri, 2 per x ed equazioni) */
+  constructor(scene, x, y, expr, solveDelay = 1) {
     this.scene = scene;
     this.x = x;
     this.y = y;
-    this.value = value;
+    this.expr = expr;
+    this.solveDelay = solveDelay;
     this.solved = false;
     this.solveTimer = null;
     this.dead = false;
@@ -21,8 +24,8 @@ export default class EnemyNumber {
   }
 
   refresh() {
-    this.text.setValue(this.value);
-    // hitbox ~ ingombro del numero (desktop: immagine LaTeX ridotta di 26 px per lato)
+    this.text.setValue(this.expr);
+    // hitbox ~ ingombro della formula (desktop: immagine LaTeX ridotta di 26 px per lato)
     const w = Math.max(8, this.text.textW);
     const h = Math.max(12, this.text.textH);
     this.hitbox.setTo(this.x - w / 2, this.y - h / 2, w, h);
@@ -34,19 +37,15 @@ export default class EnemyNumber {
     return { x: this.x + this.text.textW / 2 + 2, y: this.y - this.text.textH / 2 - 2 };
   }
 
-  /** applica il proiettile (enemy_number.py take_value) */
+  /** applica il proiettile (take_value) */
   takeValue(value, op) {
     if (this.solveTimer !== null) return;
-    if (op === Op.DIV && value === 0) return;
-    if (op === Op.ADD) this.value = this.value.add(value);
-    else if (op === Op.SUB) this.value = this.value.sub(value);
-    else if (op === Op.MUL) this.value = this.value.mul(value);
-    else if (op === Op.DIV) this.value = this.value.div(value);
+    this.expr = this.expr.apply(op, value);
     this.refresh();
     this.scene.tweens.add({ targets: this.text, scale: { from: 1.35, to: 1 }, duration: 140 });
-    if (this.value.isZero()) {
+    if (this.expr.isSolved()) {
       this.solved = true;
-      this.solveTimer = ENEMY_SOLVE_DELAY;
+      this.solveTimer = this.solveDelay;
       this.text.setColor(0x2e6b1f);
     }
   }
@@ -54,7 +53,7 @@ export default class EnemyNumber {
   update(dt) {
     if (this.solveTimer === null) return;
     this.solveTimer -= dt;
-    this.text.setAlpha(Math.max(0.2, this.solveTimer / ENEMY_SOLVE_DELAY));
+    this.text.setAlpha(Math.max(0.2, this.solveTimer / this.solveDelay));
     if (this.solveTimer <= 0) {
       this.dead = true;
       this.scene.onEnemySolved(this);

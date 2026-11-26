@@ -7,10 +7,10 @@ import { t } from "../core/i18n.js";
 import { newRun, selectedValue, changeValue, cycleValue, applyChestEffect } from "../core/run.js";
 import InputController from "../core/input.js";
 import { getProfile } from "../core/profile.js";
-import { generateEquation } from "../math/equations.js";
+import { generateEnemy } from "../math/generators.js";
 import Player from "../entities/Player.js";
 import Bullet from "../entities/Bullet.js";
-import EnemyNumber from "../entities/enemies/EnemyNumber.js";
+import MathEnemy from "../entities/enemies/MathEnemy.js";
 import Coin from "../entities/Coin.js";
 import Chest from "../entities/Chest.js";
 import Door from "../entities/Door.js";
@@ -50,7 +50,10 @@ export default class LevelScene extends Phaser.Scene {
     if (this.room.tutorial && L.tutorial) this.createTutorial(L.tutorial);
 
     this.player = new Player(this, L.player.x, L.player.y, run.skin);
-    this.enemies = L.enemies.map((e) => new EnemyNumber(this, e.x, e.y, generateEquation(this.room.enemyLevel)));
+    this.enemies = L.enemies.map((e) => {
+      const { expr, solveDelay } = generateEnemy(this.room.enemy);
+      return new MathEnemy(this, e.x, e.y, expr, solveDelay);
+    });
     this.bullets = [];
     this.coins = [];
     this.hpBar = this.add.graphics().setDepth(DEPTH.worldFx - 50);
@@ -288,7 +291,8 @@ export default class LevelScene extends Phaser.Scene {
       this.rush = true;
       this.player.speed *= 2;
     }
-    if (!this.door.isOpen && this.enemies.length === 0 && (!this.chest || this.chest.opened)) this.door.open();
+    const chestDone = !this.world.doorNeedsChest || !this.chest || this.chest.opened;
+    if (!this.door.isOpen && this.enemies.length === 0 && chestDone) this.door.open();
     if (this.door.touches(this.player.hitbox)) this.leaveRoom();
 
     this.drawHpBar();
