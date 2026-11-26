@@ -2,18 +2,26 @@
 <html lang="it">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <link rel="icon" href="assets/sprites/favicon.png">
   <title>MathBoy (web)</title>
   <style>
     html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
     #game { width: 100vw; height: 100vh; }
     canvas { cursor: none; display: block; }
+    /* telefono: niente zoom, scroll, selezione o menu del tocco lungo sul gioco */
+    #game, canvas { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+    #rotate {
+      display: none; position: fixed; inset: 0; z-index: 10; background: #111; color: #fff;
+      font: 20px sans-serif; align-items: center; justify-content: center; text-align: center;
+    }
+    @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
     #old-browser { color: #fff; font: 16px sans-serif; padding: 2em; }
   </style>
 </head>
 <body>
   <div id="game"></div>
+  <div id="rotate">Ruota il telefono</div>
   <!-- Phaser copiato nel repo: niente CDN, che le reti scolastiche spesso bloccano -->
   <script src="lib/phaser.min.js"></script>
   <script type="module" src="src/main.js"></script>

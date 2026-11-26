@@ -21,6 +21,7 @@ window.game = new Phaser.Game({
   },
   input: {
     mouse: { preventDefaultWheel: true },
+    activePointers: 3, // multitocco: joystick + bottone insieme
   },
   scene: [BootScene, LevelScene, StatsScene],
 });

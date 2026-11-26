@@ -1,6 +1,6 @@
 import { LOGICAL_WIDTH as W, LOGICAL_HEIGHT as H } from "../config/settings.js";
 import { ALL_MAPS } from "../config/worlds.js";
-import { preloadLocales, initI18n } from "../core/i18n.js";
+import { preloadLocales, initI18n, t } from "../core/i18n.js";
 import { newRun } from "../core/run.js";
 
 /** Carica tutti gli asset una volta sola, poi avvia la partita.
@@ -40,6 +40,8 @@ export default class BootScene extends Phaser.Scene {
 
   create() {
     initI18n(this);
+    const rotate = document.getElementById("rotate");
+    if (rotate) rotate.textContent = t("web.rotate");
 
     // texture condivise generate a runtime
     const g = this.make.graphics({ x: 0, y: 0 }, false);

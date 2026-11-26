@@ -30,17 +30,20 @@ export default class Hud {
     this.selector = [];
     this.selectorValues = "";
 
-    // bottoni + e - in basso a destra: visibili solo se sbloccati, si abbassano col tasto premuto
+    // bottoni + e - in basso a destra: visibili solo se sbloccati, si abbassano col tasto premuto.
+    // In modalita' touch diventano piu' grandi e distanziati, da premere col pollice.
     this.buttonOffset = [BUTTON_UP, BUTTON_UP];
-    const by = H - 24 - 20;
+    this.touchMode = false;
     this.buttons = [
-      { x: W - 84, color: BLU, key: "ball_btn_add", sym: "+" },
-      { x: W - 44, color: ROSSO, key: "ball_btn_sub", sym: "-" },
+      { desk: { x: W - 84, y: H - 44 }, touch: { x: W - 112, y: H - 46 }, color: BLU, key: "ball_btn_add", sym: "+" },
+      { desk: { x: W - 44, y: H - 44 }, touch: { x: W - 50, y: H - 46 }, color: ROSSO, key: "ball_btn_sub", sym: "-" },
     ].map((b) => ({
-      bg: fixed(scene.add.circle(b.x, by, 12, 0x282828, 0.55)),
-      ball: fixed(scene.add.image(b.x, by, shadedBall(scene, b.key, 12, b.color))),
-      label: fixed(scene.add.bitmapText(b.x + 1, by - 2, "gold32", b.sym).setOrigin(0.5)),
-      baseY: by,
+      ...b,
+      x: b.desk.x,
+      baseY: b.desk.y,
+      bg: fixed(scene.add.circle(b.desk.x, b.desk.y, 12, 0x282828, 0.55)),
+      ball: fixed(scene.add.image(b.desk.x, b.desk.y, shadedBall(scene, b.key, 12, b.color))),
+      label: fixed(scene.add.bitmapText(b.desk.x + 1, b.desk.y - 2, "gold32", b.sym).setOrigin(0.5)),
     }));
 
     // FPS + renderer: serve a misurare il lag (F3 per nascondere)
@@ -60,6 +63,31 @@ export default class Hud {
     // cursore: 4 tacche di mirino (ui/cursor.py)
     this.cursor = scene.add.graphics().setScrollFactor(0).setDepth(DEPTH.cursor);
     this.clickT = 0;
+  }
+
+  /** bottoni grandi per il pollice e niente cursore (input.js decide la modalita') */
+  setTouchMode(on) {
+    this.touchMode = on;
+    const scale = on ? 22 / 12 : 1;
+    for (const b of this.buttons) {
+      const pos = on ? b.touch : b.desk;
+      b.x = pos.x;
+      b.baseY = pos.y;
+      b.bg.setPosition(pos.x, pos.y).setScale(scale);
+      b.ball.setX(pos.x).setScale(scale);
+      b.label.setX(pos.x + 1).setScale(on ? 1.6 : 1);
+    }
+    if (on) this.cursor.clear();
+  }
+
+  /** centri dei bottoni +/- (per le aree di tocco) */
+  buttonPositions() {
+    return this.buttons.map((b) => ({ x: b.x, y: b.baseY }));
+  }
+
+  /** centri delle palline del selettore valori (per le aree di tocco) */
+  selectorPositions() {
+    return this.selector.map((s) => ({ x: s.ball.x, y: s.ball.y }));
   }
 
   notifyClick(button) {
@@ -139,8 +167,9 @@ export default class Hud {
       this.chapter.setAlpha(k * k * (3 - 2 * k));
     }
 
-    // cursore
+    // cursore (solo con il mouse)
     if (this.clickT > 0) this.clickT = Math.max(0, this.clickT - dt);
+    if (this.touchMode) return;
     const pop = this.clickT / 0.12;
     const g = 8 + 4 * pop;
     const tick = 4;

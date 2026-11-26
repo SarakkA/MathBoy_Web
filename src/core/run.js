@@ -29,6 +29,11 @@ export function changeValue(run, direction) {
   run.valueIndex = Math.min(Math.max(run.valueIndex - direction, 0), run.values.length - 1);
 }
 
+/** valore successivo, ciclico (tocco sul selettore in modalita' touch) */
+export function cycleValue(run) {
+  run.valueIndex = (run.valueIndex + 1) % run.values.length;
+}
+
 /** effetto del baule (game_manager.py: unlock_add, unlock_sub, unlock_ammo) */
 export function applyChestEffect(run, effect) {
   if (effect.unlock === "add") run.canAdd = true;

@@ -19,6 +19,14 @@ Si gioca su https://sarakka.github.io/MathBoy_Web/.
 | F3 | mostra/nasconde FPS e renderer (WebGL/Canvas) |
 | R | rigioca (game over / fine) |
 
+**Da telefono (in orizzontale):**
+- **pollice sinistro:** joystick che compare dove appoggi il dito nella metà sinistra;
+- **pollice destro:** bottoni + e −, che sparano nella direzione in cui guarda il player (i puntini davanti al player indicano dove);
+- **bottone E:** compare vicino al baule;
+- **valore:** si cambia toccando la pallina del numero.
+
+I controlli touch compaiono al primo tocco e spariscono appena usi tastiera o mouse (`src/core/input.js`).
+
 Per cambiare lingua si aggiunge `?lang=en` all'indirizzo (anche `es`, `fr`, `de`). La scelta resta salvata nel browser.
 
 ## Provarlo in locale
@@ -47,6 +55,7 @@ src/
     worlds.js            mondi e stanze: mappa, livello dei nemici, contenuto del baule
     webStrings.js        stringhe che esistono solo nella versione web
   core/
+    input.js             input unico: tastiera+mouse o touch, la scena riceve solo le azioni
     run.js               dati della partita che passano tra le stanze (HP, vite, armi, monete)
     i18n.js              traduzioni: t("chiave")
     utils.js             collisioni, palline sfumate, testo con ombra
@@ -56,7 +65,7 @@ src/
     LevelScene.js        una stanza qualsiasi di un mondo
     StatsScene.js        riepilogo di fine mondo
   entities/              Player, Bullet, Coin, Chest, Door, enemies/
-  ui/                    Hud, DialogBox, weaponIcon, floatingReward
+  ui/                    Hud, DialogBox, TouchControls, weaponIcon, floatingReward
 ```
 
 **Corrispondenza con il Python:**

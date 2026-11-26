@@ -4,7 +4,8 @@ import {
 import { WORLDS } from "../config/worlds.js";
 import { overlaps } from "../core/utils.js";
 import { t } from "../core/i18n.js";
-import { newRun, selectedValue, changeValue, applyChestEffect } from "../core/run.js";
+import { newRun, selectedValue, changeValue, cycleValue, applyChestEffect } from "../core/run.js";
+import InputController from "../core/input.js";
 import { generateEquation } from "../math/equations.js";
 import Player from "../entities/Player.js";
 import Bullet from "../entities/Bullet.js";
@@ -70,24 +71,22 @@ export default class LevelScene extends Phaser.Scene {
     cam.setRoundPixels(true);
     cam.fadeIn(ROOM_FADE_MS);
 
-    // input
-    this.keys = this.input.keyboard.addKeys("W,A,S,D,E,R,F3");
-    this.keys.F3.on("down", () => this.hud.toggleFps());
-    this.keys.E.on("down", () => this.interact());
-    this.keys.R.on("down", () => {
-      if (this.gameState === "lost") this.scene.start("Level", { run: newRun(run.world) });
-    });
-    this.input.mouse.disableContextMenu();
-    this.input.setDefaultCursor("none");
-    this.input.on("pointerdown", (p) => this.onPointerDown(p));
-    this.input.on("pointerup", (p) => this.hud.notifyRelease(p.button));
-    this.input.on("wheel", (p, objs, dx, dy) => changeValue(run, dy < 0 ? 1 : -1));
-
     this.popSound = this.sound.add("pop_sfx", { volume: 0.35 });
     this.coinSound = this.sound.add("coin_sfx", { volume: 0.25 });
 
     this.hud = new Hud(this, run, { titleKey: run.room === 0 ? this.world.titleKey : null });
     this.dialog = new DialogBox(this);
+    this.aimDots = this.add.graphics().setDepth(DEPTH.worldFx - 40); // mira in modalita' touch
+
+    // input: tastiera+mouse o touch, la scena riceve solo le azioni (core/input.js)
+    this.controls = new InputController(this, this.hud, {
+      onShoot: (op) => this.shoot(op),
+      onInteract: () => this.interact(),
+      onChangeValue: (dir) => (dir === null ? cycleValue(run) : changeValue(run, dir)),
+      onRestart: () => this.scene.start("Level", { run: newRun(run.world) }),
+      onToggleFps: () => this.hud.toggleFps(),
+      canRestart: () => this.gameState === "lost",
+    });
     this.gameState = "play"; // play | leaving | lost
     this.elapsed = 0;
     this.rush = false;
@@ -116,26 +115,31 @@ export default class LevelScene extends Phaser.Scene {
     for (const [tex, frame, x, y] of icons) this.add.image(x, y, tex, frame).setDepth(DEPTH.floor + 1);
   }
 
-  mouseWorld() {
-    const p = this.input.activePointer;
-    return this.cameras.main.getWorldPoint(p.x, p.y);
-  }
-
   canAct() {
     return this.gameState === "play" && !this.player.isDead && !this.player.locked;
   }
 
-  onPointerDown(pointer) {
-    this.hud.notifyClick(pointer.button);
+  /** spara verso il mouse (desktop) o dove guarda il player (touch) */
+  shoot(op) {
     if (!this.canAct()) return;
-    let op = null;
-    if (pointer.button === 0 && this.run.canAdd) op = Op.ADD;
-    else if (pointer.button === 2 && this.run.canSub) op = Op.SUB;
-    if (!op) return;
-    const target = this.mouseWorld();
+    if ((op === Op.ADD && !this.run.canAdd) || (op === Op.SUB && !this.run.canSub)) return;
     const c = this.player.center;
-    this.bullets.push(new Bullet(this, c.x, c.y, target.x, target.y, op, selectedValue(this.run)));
+    const aim = this.controls.getAim(c);
+    this.bullets.push(new Bullet(this, c.x, c.y, c.x + aim.x, c.y + aim.y, op, selectedValue(this.run)));
     this.run.bulletsFired++;
+  }
+
+  /** tre puntini davanti al player: dove partira' il colpo (solo touch) */
+  drawAimDots() {
+    this.aimDots.clear();
+    if (!this.controls.isTouch || this.player.isDead || this.gameState !== "play") return;
+    const c = this.player.center;
+    const aim = this.controls.getAim(c);
+    const len = Math.hypot(aim.x, aim.y) || 1;
+    this.aimDots.fillStyle(0xffffff, 0.5);
+    for (const d of [14, 20, 26]) {
+      this.aimDots.fillRect(Math.round(c.x + (aim.x / len) * d) - 1, Math.round(c.y + (aim.y / len) * d) - 1, 2, 2);
+    }
   }
 
   /** tasto E (level_Z.py handle_specific_event) */
@@ -182,13 +186,10 @@ export default class LevelScene extends Phaser.Scene {
     const run = this.run;
 
     // --- player ---
-    const k = this.keys;
-    const dir = { x: 0, y: 0 };
-    if (k.W.isDown) dir.y = -1; else if (k.S.isDown) dir.y = 1;
-    if (k.D.isDown) dir.x = 1; else if (k.A.isDown) dir.x = -1;
-    const m = this.mouseWorld();
     const c = this.player.center;
-    this.player.update(dt, dir, { x: m.x - c.x, y: m.y - c.y }, this.playerObstacles);
+    this.player.update(dt, this.controls.getMove(), this.controls.getAim(c), this.playerObstacles);
+    const nearChest = this.chest && !this.player.isDead && overlaps(this.player.hitbox, this.chest.area);
+    this.controls.update(Boolean(nearChest || this.dialog.active));
 
     // --- baule ---
     if (this.chest) {
@@ -254,6 +255,7 @@ export default class LevelScene extends Phaser.Scene {
     if (this.door.touches(this.player.hitbox)) this.leaveRoom();
 
     this.drawHpBar();
+    this.drawAimDots();
   }
 
   checkDeath(dt) {
@@ -284,6 +286,7 @@ export default class LevelScene extends Phaser.Scene {
   leaveRoom() {
     this.gameState = "leaving";
     this.hpBar.clear();
+    this.aimDots.clear();
     const run = this.run;
     run.runTime += this.elapsed;
     run.room += 1;
@@ -315,10 +318,12 @@ export default class LevelScene extends Phaser.Scene {
   showGameOver() {
     this.gameState = "lost";
     this.hpBar.clear();
+    this.aimDots.clear();
     const fixed = (o) => o.setScrollFactor(0).setDepth(DEPTH.overlay);
     fixed(this.add.rectangle(0, 0, W, H, 0x000000, 0.6).setOrigin(0));
     fixed(this.add.bitmapText(W / 2, H / 2 - 40, "gold24", t("stats.game_over")).setOrigin(0.5));
-    const lines = [t("web.enemies_left", { v: this.enemies.length }), "", t("web.restart")];
+    const restart = t(this.controls.isTouch ? "web.restart_touch" : "web.restart");
+    const lines = [t("web.enemies_left", { v: this.enemies.length }), "", restart];
     fixed(this.add.bitmapText(W / 2, H / 2 + 10, "gold12", lines.join("\n"), 12, 1).setOrigin(0.5));
   }
 }
