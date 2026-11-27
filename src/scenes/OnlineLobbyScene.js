@@ -9,9 +9,21 @@ import MenuBackground, { MenuButton } from "../ui/menuBackground.js";
 const SLOT_W = 70;
 const SLOT_GAP = 16;
 
+// arene della versus: map = nome della mappa (assets/maps) e dell'arena sul server
+// (MathBoy2/src/network/maps.py). Ogni arena ha la sua coda: si gioca solo con chi
+// ha scelto la stessa. La coop resta sulla prima.
+export const PVP_ARENAS = [
+  { map: "multiplayer_map", label: "web.map_arena" },
+  { map: "survivor_map", label: "web.map_lake" },
+];
+const CARD_W = 150;
+const CARD_PREVIEW = 130;
+const CARD_Y = 96;
+
 /** Coda online (online_state.py + lobby_state.py): connessione al server, nome e
  *  modalita', attesa degli altri giocatori. Allo START passa alla partita con la
- *  stessa connessione. data.mode: "pvp" (versus) | "coop" */
+ *  stessa connessione. data.mode: "pvp" (versus) | "coop".
+ *  In versus prima si sceglie l'arena, poi parte la connessione. */
 export default class OnlineLobbyScene extends Phaser.Scene {
   constructor() {
     super("OnlineLobby");
@@ -30,15 +42,24 @@ export default class OnlineLobbyScene extends Phaser.Scene {
     this.isTouch = this.registry.get("inputMode") === "touch";
 
     shadowText(this, W / 2, 40, "gold24", t(this.mode === "coop" ? "lobby.mode_coop" : "lobby.mode_versus")).setOrigin(0.5);
-    this.status = shadowText(this, W / 2, 80, "gold12", t("online.connecting")).setOrigin(0.5);
+    this.status = shadowText(this, W / 2, 80, "gold12", "").setOrigin(0.5);
     this.count = shadowText(this, W / 2, 98, "gold12", "").setOrigin(0.5);
     this.slots = this.add.container(0, 0);
     this.back = new MenuButton(this, W / 2 - 50, H - 50, 100, 30, t("web.back"), { onClick: () => this.leave() });
     this.input.on("pointerdown", (p) => {
       this.isTouch = p.wasTouch;
       if (this.back.contains(p.x, p.y)) this.back.onClick();
+      else if (this.cards) {
+        const card = this.cards.find((c) => c.rect.contains(p.x, p.y));
+        if (card) this.chooseArena(card.arena.map);
+      }
     });
     this.input.keyboard.on("keydown-ESC", () => this.leave());
+    this.input.keyboard.on("keydown", (e) => {
+      this.isTouch = false;
+      const i = ["1", "2", "3", "4"].indexOf(e.key);
+      if (this.cards && this.cards[i]) this.chooseArena(this.cards[i].arena.map);
+    });
 
     this.myId = null;
     this.role = "all";
@@ -47,13 +68,55 @@ export default class OnlineLobbyScene extends Phaser.Scene {
     this.leaving = false;
     this.started = false;
     this.animT = 0;
+    this.net = null;
+    this.chosenMap = PVP_ARENAS[0].map;
+    // la mappa su cui si gioca davvero la dice il server (MAP): un server vecchio
+    // non la manda e usa sempre la prima, quindi si parte da quella
+    this.serverMap = PVP_ARENAS[0].map;
+    this.cards = null;
+
+    if (this.mode === "pvp" && PVP_ARENAS.length > 1) this.showArenaChoice();
+    else this.connect();
+  }
+
+  /** due riquadri con l'anteprima delle mappe: un click (o il tasto 1 / 2) sceglie */
+  showArenaChoice() {
+    this.status.setText(t("web.choose_map"));
+    const n = PVP_ARENAS.length;
+    const gap = 30;
+    const x0 = W / 2 - (n * CARD_W + (n - 1) * gap) / 2;
+    const last = this.registry.get("pvpMap");
+    this.cards = PVP_ARENAS.map((arena, i) => {
+      const x = x0 + i * (CARD_W + gap);
+      const frame = this.add.rectangle(x, CARD_Y, CARD_W, CARD_PREVIEW + 36, 0x1e1e37, 0.9).setOrigin(0).setStrokeStyle(2, 0xd2d2e6);
+      const img = this.add.image(x + CARD_W / 2, CARD_Y + 10 + CARD_PREVIEW / 2, `map_${arena.map}`).setDisplaySize(CARD_PREVIEW, CARD_PREVIEW);
+      const label = this.add.bitmapText(x + CARD_W / 2, CARD_Y + CARD_PREVIEW + 22, "gold12", `${i + 1}. ${t(arena.label)}`).setOrigin(0.5);
+      return {
+        arena, frame, img, label, last: arena.map === last,
+        rect: new Phaser.Geom.Rectangle(x, CARD_Y, CARD_W, CARD_PREVIEW + 36),
+      };
+    });
+  }
+
+  chooseArena(map) {
+    if (this.leaving || this.net) return;
+    this.chosenMap = map;
+    this.registry.set("pvpMap", map); // ricordata per la prossima volta (evidenziata)
+    this.sound.play("blip_sfx", { volume: 0.25 });
+    for (const c of this.cards) [c.frame, c.img, c.label].forEach((o) => o.destroy());
+    this.cards = null;
+    this.connect();
+  }
+
+  connect() {
+    this.status.setText(t("online.connecting"));
     this.net = new Connection();
   }
 
   leave() {
     if (this.leaving || this.started) return;
     this.leaving = true;
-    this.net.close();
+    this.net?.close();
     this.cameras.main.fadeOut(300);
     this.cameras.main.once("camerafadeoutcomplete", () => this.scene.start("Menu"));
   }
@@ -63,7 +126,14 @@ export default class OnlineLobbyScene extends Phaser.Scene {
     this.bg.update(dt);
     this.back.update(dt, this.input.activePointer, this.isTouch);
     this.animT += dt;
-    if (this.leaving || this.started) return;
+    if (this.cards) {
+      const ptr = this.input.activePointer;
+      for (const c of this.cards) {
+        const hover = !this.isTouch && c.rect.contains(ptr.x, ptr.y);
+        c.frame.setStrokeStyle(2, hover ? 0xc8c832 : c.last ? 0xffc800 : 0xd2d2e6);
+      }
+    }
+    if (this.leaving || this.started || !this.net) return;
 
     if (this.net.status === "closed") {
       this.status.setText(this.myId === null ? t("online.conn_failed") : t("web.net_lost"));
@@ -78,7 +148,8 @@ export default class OnlineLobbyScene extends Phaser.Scene {
       if (type === "ID") {
         this.myId = Number(f[0]);
         const profile = getProfile();
-        this.net.send("NAME", profile.name || "Player", profile.skin || 0, this.mode);
+        // quinto campo: l'arena (solo versus; il server la ignora in coop)
+        this.net.send("NAME", profile.name || "Player", profile.skin || 0, this.mode, this.chosenMap);
         this.status.setText(t(this.mode === "coop" ? "lobby.waiting_players" : "lobby.waiting_opponent"));
       } else if (type === "LOBBY") {
         // LOBBY|presenti|capienza|pid:nome:skin;...
@@ -106,6 +177,8 @@ export default class OnlineLobbyScene extends Phaser.Scene {
         this.role = f[0];
       } else if (type === "MODE") {
         this.mode = f[0];
+      } else if (type === "MAP") {
+        this.serverMap = f[0];
       } else if (type === "START") {
         this.status.setText(t("lobby.starting"));
         this.started = true;
@@ -113,6 +186,7 @@ export default class OnlineLobbyScene extends Phaser.Scene {
         this.net.queue = msgs.slice(i + 1).concat(this.net.queue);
         const data = {
           net: this.net, myId: this.myId, duration: Number(f[0]) || 300, role: this.role, mode: this.mode,
+          map: this.serverMap,
           names: Object.fromEntries(this.players.map((p) => [p.pid, p.name])),
           skins: Object.fromEntries(this.players.map((p) => [p.pid, p.skin])),
         };

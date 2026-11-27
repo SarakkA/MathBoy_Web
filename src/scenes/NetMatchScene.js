@@ -32,10 +32,14 @@ export default class NetMatchScene extends BaseLevelScene {
     this.names = { ...(data.names || {}) };
     this.skins = { ...(data.skins || {}) };
     this.run = newNetRun(getProfile().skin, this.role);
+    // la mappa della stanza, decisa dal server (messaggio MAP in lobby)
+    this.mapName = data.map || NET_MAP;
   }
 
   createNet() {
-    const L = this.createMap(NET_MAP);
+    // una mappa che questa versione non conosce: meglio quella di sempre che un crash
+    const name = this.cache.json.exists(`map_${this.mapName}`) ? this.mapName : NET_MAP;
+    const L = this.createMap(name);
     this.createCommon(L, {
       hud: { coins: false },
       handlers: { canRestart: () => false },

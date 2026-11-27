@@ -20,6 +20,9 @@ export const WEB_STRINGS = {
     "web.loading": "Caricamento...",
     "web.rank_empty": "Ancora nessun punteggio",
     "web.rank_offline": "Classifica non raggiungibile",
+    "web.choose_map": "Scegli l'arena",
+    "web.map_arena": "Arena",
+    "web.map_lake": "Lago",
   },
   en: {
     "web.restart": "Press R to play again",
@@ -40,5 +43,8 @@ export const WEB_STRINGS = {
     "web.loading": "Loading...",
     "web.rank_empty": "No scores yet",
     "web.rank_offline": "Leaderboard unreachable",
+    "web.choose_map": "Choose the arena",
+    "web.map_arena": "Arena",
+    "web.map_lake": "Lake",
   },
 };
