@@ -1,7 +1,8 @@
 import { LOGICAL_WIDTH as W, LOGICAL_HEIGHT as H } from "../config/settings.js";
 import { WORLDS } from "../config/worlds.js";
 import { t } from "../core/i18n.js";
-import { completeWorld, addSurvivorResult, addParametricResult } from "../core/profile.js";
+import { completeWorld, addSurvivorResult, addParametricResult, getProfile } from "../core/profile.js";
+import { sendScore, MODE } from "../net/leaderboard.js";
 
 const WORLD_LABELS = {
   Q: "menu.btn.world_q", ZX: "menu.btn.world_zx", QX: "menu.btn.world_qx", EQ: "menu.btn.world_eq",
@@ -14,8 +15,10 @@ export function formatDuration(seconds) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-/** Riepilogo a fine partita (stats_state.py, in versione ridotta: niente voto,
- *  precisione e classifica online per ora).
+/** Riepilogo a fine partita (stats_state.py, in versione ridotta: niente voto e
+ *  precisione per ora). Survivor e Parametrico inviano il punteggio alla classifica
+ *  online (net/leaderboard.js); la campagna no, finche' mancano precisione e voto
+ *  che le regole di Firestore richiedono.
  *  Campagna: { run }  -> sblocca il mondo successivo.
  *  Survivor: { mode: "survivor", score, runTime, level, kills } -> salva il record.
  *  Parametrico: { mode: "parametric", score, runTime } -> salva il record.
@@ -42,6 +45,7 @@ export default class StatsScene extends Phaser.Scene {
     let unlocked = null;
     if (d.mode === "survivor") {
       addSurvivorResult(d.score, d.level);
+      this.submit(MODE.SURVIVOR, { level: d.level, seconds: Math.floor(d.runTime), kills: d.kills ?? 0 });
       title = t("stats.survivor_complete");
       lines = [
         t("stats.coins", { v: d.score }),
@@ -56,6 +60,7 @@ export default class StatsScene extends Phaser.Scene {
       lines = [t("stats.team_kills", { v: d.teamKills ?? 0 }), t("stats.team_wipes", { v: d.wipes ?? 0 })];
     } else if (d.mode === "parametric") {
       addParametricResult(d.score);
+      this.submit(MODE.PARAMETRIC, { coins: d.score, seconds: Math.floor(d.runTime) });
       title = t("stats.game_over");
       lines = [
         t("stats.score", { v: d.score }),
@@ -91,5 +96,12 @@ export default class StatsScene extends Phaser.Scene {
     const toMenu = () => this.scene.start("Menu");
     this.input.keyboard.once("keydown-R", toMenu);
     this.time.delayedCall(500, () => this.input.once("pointerdown", toMenu));
+  }
+
+  /** punteggio alla classifica online, una volta sola per partita e senza aspettare */
+  submit(mode, stats) {
+    if (this.data_.submitted) return;
+    this.data_.submitted = true;
+    sendScore(getProfile().name, mode, stats);
   }
 }

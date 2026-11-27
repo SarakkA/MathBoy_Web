@@ -6,6 +6,7 @@ import LevelScene from "./scenes/LevelScene.js";
 import StatsScene from "./scenes/StatsScene.js";
 import SurvivorScene from "./scenes/SurvivorScene.js";
 import CreditsScene from "./scenes/CreditsScene.js";
+import RankScene from "./scenes/RankScene.js";
 import ParametricScene from "./scenes/ParametricScene.js";
 import OnlineLobbyScene from "./scenes/OnlineLobbyScene.js";
 import VersusScene from "./scenes/VersusScene.js";
@@ -31,5 +32,5 @@ window.game = new Phaser.Game({
     mouse: { preventDefaultWheel: true },
     activePointers: 3, // multitocco: joystick + bottone insieme
   },
-  scene: [BootScene, IntroScene, MenuScene, LevelScene, SurvivorScene, ParametricScene, OnlineLobbyScene, VersusScene, CoopScene, StatsScene, CreditsScene],
+  scene: [BootScene, IntroScene, MenuScene, LevelScene, SurvivorScene, ParametricScene, OnlineLobbyScene, VersusScene, CoopScene, StatsScene, CreditsScene, RankScene],
 });

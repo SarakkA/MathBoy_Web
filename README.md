@@ -13,6 +13,7 @@ Non c'è nessun build step e nessuna dipendenza da installare: sono moduli JavaS
 - modalità **Survivor**: ondate infinite, boss-equazione con minion, carte potenziamento a ogni livello, pozioni ghiaccio / elettrico / fuoco;
 - modalità **Parametrico**: equazioni con i parametri a e b che cadono dall'alto, munizioni a, b, −1, 2; si perde una vita se toccano la striscia rossa;
 - **multiplayer online**, Sfida (versus) e Coop, sullo stesso server del gioco desktop: chi gioca dal browser e chi dal .exe finiscono nelle stesse partite;
+- **classifiche online**, le stesse del gioco desktop (Firestore): Survivor e Parametrico inviano il punteggio a fine partita; la schermata mostra anche campagna e 1 Minuto giocati dal .exe;
 - pagina dei **crediti**.
 
 Per ora è tutto già sbloccato, per poter provare subito ogni modalità: `UNLOCK_EVERYTHING` in `src/core/profile.js` (rimettere a `false` per tornare alla progressione normale).
@@ -179,8 +180,13 @@ Il nemico (`MathEnemy`) non sa che formula ha: chiama solo queste tre funzioni. 
 1. ~~Mondo Z~~, ~~intro e menu~~, ~~Mondo Q~~, ~~Z[x], Q[x] ed Eqz con il motore algebrico~~, ~~Survivor~~, ~~crediti~~, ~~Parametrico~~, ~~multiplayer online~~.
 2. Musica (pesa: va scelto se e come caricarla senza rallentare l'avvio).
 3. Modalità 1 Minuto, che usa gli stessi nemici-formula.
-4. Statistiche complete (precisione, voto) e classifica online.
-5. Classifica online: solo dopo aver ristretto le regole di Firestore (`tools/firestore.rules` nel progetto Python).
+4. Statistiche complete (precisione, voto), poi invio dei punteggi della campagna alla classifica (le regole di Firestore richiedono `accuracy` e `grade`).
+
+## Classifiche online
+
+`src/net/leaderboard.js` parla con Firestore via REST (niente SDK, niente CDN): raccolta `scores`, la stessa che usa il desktop (`src/utils/firebase.py`). I nomi delle modalità su Firestore (`"Survivor"`, `"Letterale"`, `"Mondo Z"`…) sono condivisi col desktop e non vanno tradotti.
+
+Chi può scrivere cosa lo decidono le regole in `tools/firestore.rules` del progetto Python: solo aggiunte, campi e limiti controllati. Vanno pubblicate dalla console Firebase prima di mettere online questa versione. Il punteggio lo calcola comunque il browser: un punteggio falso ma plausibile resta possibile, e i nomi offensivi si cancellano a mano dalla console.
 
 ## Pubblicazione
 

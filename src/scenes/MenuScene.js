@@ -18,7 +18,7 @@ const EXTRA_ROW = [
   { label: "Survivor", scene: "Survivor" },
   { label: "MultiPlayer", scene: "MP" },     // apre la scelta Sfida / Coop online
   { label: "menu.btn.literal", scene: "Parametric" },
-  { label: "menu.btn.leaderboards", scene: null },
+  { label: "menu.btn.leaderboards", scene: "Rank" },
 ];
 // personaggio in alto a sinistra che guarda il mouse (menu_state.py animate_skin)
 // multiplayer online: la coop si spegne qui se serve

@@ -17,6 +17,9 @@ export const WEB_STRINGS = {
     "web.net_lost": "Connessione persa",
     "web.server_off": "Il server online e' spento o non raggiungibile",
     "web.opponent_left": "L'avversario ha lasciato la partita",
+    "web.loading": "Caricamento...",
+    "web.rank_empty": "Ancora nessun punteggio",
+    "web.rank_offline": "Classifica non raggiungibile",
   },
   en: {
     "web.restart": "Press R to play again",
@@ -34,5 +37,8 @@ export const WEB_STRINGS = {
     "web.net_lost": "Connection lost",
     "web.server_off": "The online server is off or unreachable",
     "web.opponent_left": "Your opponent left the match",
+    "web.loading": "Loading...",
+    "web.rank_empty": "No scores yet",
+    "web.rank_offline": "Leaderboard unreachable",
   },
 };
