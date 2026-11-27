@@ -7,7 +7,18 @@
   <title>MathBoy (web)</title>
   <style>
     html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-    #game { width: 100vw; height: 100vh; }
+    /* il gioco occupa solo l'area davvero visibile. Con 100vh, sui telefoni (Safari e i
+       browser interni di WhatsApp, Instagram, ...) l'altezza comprende anche lo spazio
+       sotto le barre del browser: il fondo del gioco (es. il bottone OK della scelta del
+       personaggio) finiva coperto e, senza scroll, non si poteva toccare.
+       fixed + bordi a 0 segue l'area visibile; env() tiene il gioco fuori dal notch */
+    #game {
+      position: fixed;
+      top: env(safe-area-inset-top, 0px);
+      right: env(safe-area-inset-right, 0px);
+      bottom: env(safe-area-inset-bottom, 0px);
+      left: env(safe-area-inset-left, 0px);
+    }
     canvas { cursor: none; display: block; }
     /* telefono: niente zoom, scroll, selezione o menu del tocco lungo sul gioco */
     #game, canvas { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }

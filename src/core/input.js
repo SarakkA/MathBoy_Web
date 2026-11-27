@@ -11,7 +11,9 @@ import TouchControls from "../ui/TouchControls.js";
 export default class InputController {
   /**
    * handlers: { onFirePress(kind), onFireRelease(kind), onInteract(), onChangeValue(dir),
-   *             onRestart(), onToggleFps(), canRestart() -> bool }   kind: "add" | "sub"
+   *             onRestart(), onToggleFps(), canRestart() -> bool,
+   *             onMenu() }   kind: "add" | "sub"
+   * onMenu: bottone pausa dell'Hud o ESC (apre / chiude "Tornare al menu?")
    */
   constructor(scene, hud, handlers) {
     this.scene = scene;
@@ -19,11 +21,12 @@ export default class InputController {
     this.h = handlers;
     this.lastAim = { x: 0, y: -1 }; // il player parte girato in su
 
-    this.keys = scene.input.keyboard.addKeys("W,A,S,D,E,R,F3");
+    this.keys = scene.input.keyboard.addKeys("W,A,S,D,E,R,F3,ESC");
     this.keys.E.on("down", () => this.h.onInteract());
     this.keys.E.on("up", () => this.h.onInteractRelease?.());
     this.keys.R.on("down", () => { if (this.h.canRestart()) this.h.onRestart(); });
     this.keys.F3.on("down", () => this.h.onToggleFps());
+    this.keys.ESC.on("down", () => this.h.onMenu?.());
     scene.input.keyboard.on("keydown", () => this.setMode("desktop"));
 
     scene.input.mouse.disableContextMenu();
@@ -51,6 +54,10 @@ export default class InputController {
 
   onDown(p) {
     this.setMode(p.wasTouch ? "touch" : "desktop");
+    if (this.h.onMenu && this.hud.menuButtonHit(p.x, p.y)) {
+      this.h.onMenu();
+      return;
+    }
     if (this.h.canRestart()) {
       this.h.onRestart();
       return;
@@ -100,6 +107,17 @@ export default class InputController {
         .then(() => window.screen?.orientation?.lock?.("landscape"))
         .catch(() => { /* negato o non supportato: si gioca senza schermo intero */ });
     } catch { /* non supportato */ }
+  }
+
+  /** dimentica i tocchi in corso: mentre e' aperto il menu di pausa i rilasci non
+   *  arrivano alla scena (li assorbe il velo), e il joystick resterebbe "premuto".
+   *  La tastiera no: Phaser la azzera gia' quando mette in pausa la scena, e azzerarla
+   *  qui (dentro il gestore di ESC) farebbe leggere l'autorepeat di ESC come una nuova
+   *  pressione, riaprendo subito il riquadro appena chiuso */
+  reset() {
+    this.touch.reset();
+    this.hud.notifyRelease(0);
+    this.hud.notifyRelease(2);
   }
 
   /** direzione di movimento {x, y} (non per forza normalizzata) */

@@ -40,6 +40,10 @@ export default class MenuScene extends Phaser.Scene {
     this.input.setDefaultCursor("default");
     this.blip = this.sound.add("blip_sfx", { volume: 0.25 });
     this.leaving = false;
+    // Phaser riusa la stessa istanza della scena: senza questo, tornando dal multiplayer
+    // restava il riquadro di prima (gia' distrutto), che bloccava i click e mandava
+    // in errore update() a ogni frame
+    this.mpPanel = null;
 
     // personaggio, nome e monete totali
     this.skinTime = 0;

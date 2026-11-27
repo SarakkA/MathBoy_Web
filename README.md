@@ -34,6 +34,7 @@ Si gioca su https://sarakka.github.io/MathBoy_Web/.
 | R | continua (game over / fine mondo: si torna al menu) |
 | T tenuto premuto 2 s (menu) | sblocca tutti i mondi, come nel gioco desktop |
 | ESC (crediti, coda online) | torna al menu |
+| ESC o bottone pausa in alto a destra (in partita) | "Tornare al menu?" in ogni modalità: da soli la partita si ferma, online no |
 | E tenuto premuto (coop) | rianima il compagno a terra |
 
 **Da telefono (in orizzontale):**
@@ -41,6 +42,7 @@ Si gioca su https://sarakka.github.io/MathBoy_Web/.
 - **pollice destro:** bottoni + e −, che sparano nella direzione in cui guarda il player (i puntini davanti al player indicano dove). Tenendoli premuti si carica × o ÷;
 - **bottone E:** compare vicino al baule;
 - **valore:** si cambia toccando la pallina del numero;
+- **pausa / menu:** bottone pausa in alto a destra, poi Si / No (toccare fuori dal riquadro annulla);
 - **carte del Survivor:** si toccano la carta e poi "Conferma".
 
 I controlli touch compaiono al primo tocco e spariscono appena usi tastiera o mouse (`src/core/input.js`).

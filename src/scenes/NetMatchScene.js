@@ -124,7 +124,29 @@ export default class NetMatchScene extends BaseLevelScene {
   // --- input e sparo ---
 
   canAct() {
-    return this.gameState === "play" && !this.player.isDead && !this.ended;
+    return this.gameState === "play" && !this.player.isDead && !this.ended && !this.pauseOpen;
+  }
+
+  // --- menu di pausa: online la partita non si ferma, il server va avanti ---
+
+  get pausesGame() {
+    return false;
+  }
+
+  canOpenPause() {
+    return super.canOpenPause() && !this.ended && !this.lost;
+  }
+
+  /** mentre si sceglie il player resta fermo (altrimenti continuerebbe con l'ultimo INPUT) */
+  onPauseOpen() {
+    this.stopInput();
+  }
+
+  /** uscita volontaria: chiudendo la connessione il server avvisa l'avversario (RESET) */
+  onLeaveToMenu() {
+    this.ended = true;
+    this.gameState = "ended";
+    this.net.close();
   }
 
   /** il colpo lo crea il server: qui si manda solo la richiesta (SHOOT) */
@@ -272,6 +294,7 @@ export default class NetMatchScene extends BaseLevelScene {
 
   onMatchEnded(f) {
     if (this.ended) return;
+    this.closePauseMenu(); // partita finita mentre era aperto "Tornare al menu?"
     this.ended = true;
     this.gameState = "ended";
     this.stopInput();
@@ -295,6 +318,7 @@ export default class NetMatchScene extends BaseLevelScene {
   /** server spento o stanza chiusa: messaggio e ritorno al menu */
   connectionLost(text) {
     if (this.lost || this.ended) return;
+    this.closePauseMenu();
     this.lost = true;
     this.gameState = "ended";
     this.net.close();

@@ -93,6 +93,13 @@ export default class TouchControls {
     return i === 0 ? "add" : "sub";
   }
 
+  /** rilascia tutto (joystick, bottoni, E) senza generare azioni */
+  reset() {
+    this.releaseJoystick();
+    this.buttonPointers.clear();
+    this.ePointer = null;
+  }
+
   releaseJoystick() {
     this.joyId = null;
     this.direction = { x: 0, y: 0 };

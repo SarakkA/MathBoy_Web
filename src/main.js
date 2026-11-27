@@ -11,6 +11,7 @@ import ParametricScene from "./scenes/ParametricScene.js";
 import OnlineLobbyScene from "./scenes/OnlineLobbyScene.js";
 import VersusScene from "./scenes/VersusScene.js";
 import CoopScene from "./scenes/CoopScene.js";
+import PauseScene from "./scenes/PauseScene.js";
 
 // Superficie logica 640x360 come il desktop, scalata per riempire la finestra.
 // AUTO = WebGL, con ripiego automatico su Canvas 2D se WebGL e' disattivato.
@@ -32,5 +33,10 @@ window.game = new Phaser.Game({
     mouse: { preventDefaultWheel: true },
     activePointers: 3, // multitocco: joystick + bottone insieme
   },
-  scene: [BootScene, IntroScene, MenuScene, LevelScene, SurvivorScene, ParametricScene, OnlineLobbyScene, VersusScene, CoopScene, StatsScene, CreditsScene, RankScene],
+  scene: [BootScene, IntroScene, MenuScene, LevelScene, SurvivorScene, ParametricScene, OnlineLobbyScene, VersusScene, CoopScene, StatsScene, CreditsScene, RankScene,
+    PauseScene], // ultima: disegnata sopra la partita
 });
+
+// telefono: quando compaiono o spariscono le barre del browser l'area visibile cambia.
+// Phaser se ne accorge da solo entro mezzo secondo; cosi' si riadatta subito.
+window.visualViewport?.addEventListener("resize", () => window.game.scale.refresh());

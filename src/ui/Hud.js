@@ -7,6 +7,9 @@ const CHAPTER_HOLD = 2.5;
 const CHAPTER_FADE_OUT = 1.0;
 const BUTTON_UP = 4;   // offset dei bottoni +/- da rilasciati (level_base.py button_offset)
 const CHARGE_RADIUS = 14; // charge_circle.py, attorno ai bottoni +/-
+// bottone pausa / torna al menu in alto a destra (timer e ping finiscono a W - 50)
+const MENU_BTN = { x: W - 32, y: 6, w: 24, h: 20 };
+const MENU_HIT = 8;       // margine in piu' dell'area di tocco
 
 /** HUD a schermo fisso (hud.py + cuori + titolo del capitolo + contatore FPS + cursore).
  *  Legge tutto dalla run, cosi' resta allineato quando un baule sblocca qualcosa. */
@@ -71,9 +74,34 @@ export default class Hud {
     }
     this.chapterTimer = 0;
 
+    // bottone pausa: apre "Tornare al menu?" (scenes/PauseScene.js)
+    this.menuRect = new Phaser.Geom.Rectangle(MENU_BTN.x, MENU_BTN.y, MENU_BTN.w, MENU_BTN.h);
+    this.menuHit = Phaser.Geom.Rectangle.Inflate(Phaser.Geom.Rectangle.Clone(this.menuRect), MENU_HIT, MENU_HIT);
+    this.menuGfx = fixed(scene.add.graphics());
+    this.menuHover = null;
+    this.drawMenuButton(false);
+
     // cursore: 4 tacche di mirino (ui/cursor.py)
     this.cursor = scene.add.graphics().setScrollFactor(0).setDepth(DEPTH.cursor);
     this.clickT = 0;
+  }
+
+  /** riquadro scuro con il simbolo della pausa (due barrette) */
+  drawMenuButton(hover) {
+    if (hover === this.menuHover) return;
+    this.menuHover = hover;
+    const r = this.menuRect;
+    const cx = Math.round(r.centerX);
+    const cy = Math.round(r.centerY);
+    this.menuGfx.clear()
+      .fillStyle(hover ? 0xc8c832 : 0x282828, hover ? 0.9 : 0.55).fillRoundedRect(r.x, r.y, r.width, r.height, 4)
+      .lineStyle(1, 0xffffff, 0.6).strokeRoundedRect(r.x + 0.5, r.y + 0.5, r.width - 1, r.height - 1, 4)
+      .fillStyle(0xffffff, 0.9).fillRect(cx - 5, cy - 5, 3, 10).fillRect(cx + 2, cy - 5, 3, 10);
+  }
+
+  /** il punto (coordinate dello schermo) cade sul bottone pausa? */
+  menuButtonHit(x, y) {
+    return Phaser.Geom.Rectangle.Contains(this.menuHit, x, y);
   }
 
   /** bottoni grandi per il pollice e niente cursore (input.js decide la modalita') */
@@ -203,6 +231,7 @@ export default class Hud {
 
     // cursore (solo con il mouse)
     if (this.clickT > 0) this.clickT = Math.max(0, this.clickT - dt);
+    this.drawMenuButton(!this.touchMode && Phaser.Geom.Rectangle.Contains(this.menuRect, pointer.x, pointer.y));
     if (this.touchMode) return;
     const pop = this.clickT / 0.12;
     const g = 8 - 4 * Math.max(this.charge[0], this.charge[1]) + 4 * pop; // si stringe in carica

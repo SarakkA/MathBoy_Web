@@ -67,16 +67,72 @@ export default class BaseLevelScene extends Phaser.Scene {
       onRestart: () => this.scene.start("Menu"),
       onToggleFps: () => this.hud.toggleFps(),
       canRestart: () => this.gameState === "lost",
+      onMenu: () => this.togglePauseMenu(),
       ...handlers,
     });
     this.gameState = "play";
     this.elapsed = 0;
     this.charging = { add: null, sub: null }; // secondi di pressione, null = non in carica
+
+    // menu di pausa: da azzerare qui, Phaser riusa la stessa istanza della scena
+    this.pauseOpen = false;
+    this.leavingToMenu = false;
+    // qualunque sia il motivo per cui la partita finisce, il riquadro non deve restare sopra
+    this.events.once("shutdown", () => this.scene.stop("Pause"));
   }
 
   canAct() {
-    return this.gameState === "play" && !this.player.isDead && !this.player.locked;
+    return this.gameState === "play" && !this.player.isDead && !this.player.locked && !this.pauseOpen;
   }
+
+  // --- menu di pausa "Tornare al menu?" (scenes/PauseScene.js) ---
+
+  /** da soli la partita si ferma; online no (NetMatchScene) */
+  get pausesGame() {
+    return true;
+  }
+
+  canOpenPause() {
+    return !this.leavingToMenu;
+  }
+
+  togglePauseMenu() {
+    if (this.pauseOpen) this.closePauseMenu();
+    else this.openPauseMenu();
+  }
+
+  openPauseMenu() {
+    if (this.pauseOpen || !this.canOpenPause()) return;
+    this.pauseOpen = true;
+    this.charging = { add: null, sub: null };
+    this.controls.reset();
+    this.onPauseOpen();
+    if (this.pausesGame) this.scene.pause();
+    this.scene.launch("Pause", { target: this.scene.key, paused: this.pausesGame, online: !this.pausesGame });
+  }
+
+  closePauseMenu() {
+    if (!this.pauseOpen) return;
+    this.pauseOpen = false;
+    this.scene.stop("Pause");
+    this.controls.reset();                           // tocchi rimasti a meta' sotto il velo
+    this.controls.setMode(this.controls.mode, true); // cursore di nuovo nascosto col mouse
+    if (this.scene.isPaused()) this.scene.resume();
+  }
+
+  /** "Si" nel menu di pausa (la dissolvenza la fa PauseScene) */
+  leaveToMenu() {
+    if (this.leavingToMenu) return;
+    this.leavingToMenu = true;
+    this.pauseOpen = false;
+    this.onLeaveToMenu();
+    this.scene.stop("Pause");
+    this.scene.start("Menu");
+  }
+
+  /** per le sottoclassi (online: fermare il player, chiudere la connessione) */
+  onPauseOpen() {}
+  onLeaveToMenu() {}
 
   /** tasto sinistro / bottone + ("add"), tasto destro / bottone - ("sub") premuto.
    *  Se × (o ÷) e' sbloccato parte la carica, altrimenti spara subito (level_base.py). */

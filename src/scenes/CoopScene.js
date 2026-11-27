@@ -43,6 +43,11 @@ export default class CoopScene extends NetMatchScene {
     this.net.send("REVIVE", on ? 1 : 0);
   }
 
+  onPauseOpen() {
+    super.onPauseOpen();
+    this.setRevive(false); // il rilascio di E non arriverebbe
+  }
+
   statsData(rank, f) {
     return { mode: "coop", teamKills: Number(f[1]) || 0, wipes: Number(f[2]) || 0 };
   }

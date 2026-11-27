@@ -23,6 +23,10 @@ export const WEB_STRINGS = {
     "web.choose_map": "Scegli l'arena",
     "web.map_arena": "Arena",
     "web.map_lake": "Lago",
+    // niente lettere accentate: il font bitmap italiano non le ha (come "Si" in quit.yes)
+    "web.pause_title": "Tornare al menu?",
+    "web.pause_lost": "Perderai la partita in corso",
+    "web.pause_online": "Uscirai dalla partita online",
   },
   en: {
     "web.restart": "Press R to play again",
@@ -46,5 +50,8 @@ export const WEB_STRINGS = {
     "web.choose_map": "Choose the arena",
     "web.map_arena": "Arena",
     "web.map_lake": "Lake",
+    "web.pause_title": "Back to the menu?",
+    "web.pause_lost": "You will lose the current game",
+    "web.pause_online": "You will leave the online match",
   },
 };
