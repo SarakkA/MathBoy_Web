@@ -21,16 +21,32 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deploy1.outputs.page_url || steps.deploy2.outputs.page_url || steps.deploy3.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
-      # versioni per Node 24: con le vecchie (configure-pages@v5, upload-pages-artifact@v4,
-      # deploy-pages@v4) GitHub forza Node 24 e deploy-pages non trova piu' l'artifact
-      # caricato ("No artifacts named github-pages were found")
       - uses: actions/configure-pages@v6
       # pubblica la radice del repo (.git e .github vengono esclusi in automatico)
       - uses: actions/upload-pages-artifact@v5
         with:
           path: .
-      - id: deployment
+
+      # Problema noto di GitHub (actions/deploy-pages#451, molto frequente da fine novembre
+      # 2026): per qualche secondo dopo il caricamento l'artifact non risulta ancora, e
+      # deploy-pages fallisce con "No artifacts named github-pages were found".
+      # "Re-run" non aiuta (carica un secondo artifact con lo stesso nome), quindi:
+      # attesa iniziale e fino a 3 tentativi, l'ultimo fa fallire il job se va male.
+      - run: sleep 10
+      - id: deploy1
+        uses: actions/deploy-pages@v5
+        continue-on-error: true
+      - if: steps.deploy1.outcome == 'failure'
+        run: sleep 20
+      - id: deploy2
+        if: steps.deploy1.outcome == 'failure'
+        uses: actions/deploy-pages@v5
+        continue-on-error: true
+      - if: steps.deploy1.outcome == 'failure' && steps.deploy2.outcome == 'failure'
+        run: sleep 40
+      - id: deploy3
+        if: steps.deploy1.outcome == 'failure' && steps.deploy2.outcome == 'failure'
         uses: actions/deploy-pages@v5
