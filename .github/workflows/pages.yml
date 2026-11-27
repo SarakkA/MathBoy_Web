@@ -24,10 +24,13 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/configure-pages@v5
+      # versioni per Node 24: con le vecchie (configure-pages@v5, upload-pages-artifact@v4,
+      # deploy-pages@v4) GitHub forza Node 24 e deploy-pages non trova piu' l'artifact
+      # caricato ("No artifacts named github-pages were found")
+      - uses: actions/configure-pages@v6
       # pubblica la radice del repo (.git e .github vengono esclusi in automatico)
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: .
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
